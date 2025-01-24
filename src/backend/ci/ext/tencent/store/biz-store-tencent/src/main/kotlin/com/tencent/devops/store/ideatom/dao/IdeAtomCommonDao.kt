@@ -30,15 +30,19 @@ package com.tencent.devops.store.ideatom.dao
 import com.tencent.devops.common.api.constant.KEY_VERSION
 import com.tencent.devops.model.store.tables.TIdeAtom
 import com.tencent.devops.model.store.tables.TIdeAtomFeature
+import com.tencent.devops.model.store.tables.TIdeAtomVersionLog
 import com.tencent.devops.store.common.dao.AbstractStoreCommonDao
 import com.tencent.devops.store.pojo.common.KEY_STORE_CODE
 import com.tencent.devops.store.pojo.common.StoreBaseInfo
 import com.tencent.devops.store.pojo.common.enums.StoreTypeEnum
+import com.tencent.devops.store.pojo.ideatom.enums.IdeAtomStatusEnum
 import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.Record
+import org.jooq.Record3
 import org.jooq.Result
 import org.springframework.stereotype.Repository
+import java.time.LocalDateTime
 
 @Repository(value = "IDE_ATOM_COMMON_DAO")
 class IdeAtomCommonDao : AbstractStoreCommonDao() {
@@ -147,5 +151,20 @@ class IdeAtomCommonDao : AbstractStoreCommonDao() {
         return with(TIdeAtom.T_IDE_ATOM) {
             dslContext.select(ATOM_CODE).from(this).where(ID.eq(storeId)).fetchOne(0, String::class.java)
         }
+    }
+
+    override fun getStoreComponentVersionLogs(
+        dslContext: DSLContext,
+        storeCode: String
+    ): Result<Record3<String, String, LocalDateTime>>? {
+        val ideAtom = TIdeAtom.T_IDE_ATOM
+        val ideAtomVersionLogs = TIdeAtomVersionLog.T_IDE_ATOM_VERSION_LOG
+        return dslContext.select(ideAtom.VERSION, ideAtomVersionLogs.CONTENT, ideAtom.UPDATE_TIME)
+            .from(ideAtom)
+            .join(ideAtomVersionLogs)
+            .on(ideAtom.ID.eq(ideAtomVersionLogs.ATOM_ID))
+            .where(ideAtom.ATOM_STATUS.eq(IdeAtomStatusEnum.RELEASED.status.toByte()).and(ideAtom.ATOM_CODE.eq(storeCode)))
+            .fetch()
+
     }
 }

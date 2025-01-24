@@ -33,6 +33,7 @@ import com.tencent.devops.common.api.constant.KEY_VERSION
 import com.tencent.devops.model.store.tables.TExtensionService
 import com.tencent.devops.model.store.tables.TExtensionServiceEnvInfo
 import com.tencent.devops.model.store.tables.TExtensionServiceFeature
+import com.tencent.devops.model.store.tables.TExtensionServiceVersionLog
 import com.tencent.devops.model.store.tables.TStorePipelineRel
 import com.tencent.devops.model.store.tables.TStoreProjectRel
 import com.tencent.devops.process.utils.KEY_PIPELINE_ID
@@ -45,11 +46,14 @@ import com.tencent.devops.store.pojo.common.KEY_STORE_CODE
 import com.tencent.devops.store.pojo.common.StoreBaseInfo
 import com.tencent.devops.store.pojo.common.enums.StoreProjectTypeEnum
 import com.tencent.devops.store.pojo.common.enums.StoreTypeEnum
+import com.tencent.devops.store.pojo.extservice.enums.ExtServiceStatusEnum
 import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.Record
+import org.jooq.Record3
 import org.jooq.Result
 import org.springframework.stereotype.Repository
+import java.time.LocalDateTime
 
 @Repository(value = "SERVICE_COMMON_DAO")
 class ServiceCommonDao : AbstractStoreCommonDao() {
@@ -183,5 +187,21 @@ class ServiceCommonDao : AbstractStoreCommonDao() {
         return with(TExtensionService.T_EXTENSION_SERVICE) {
             dslContext.select(SERVICE_CODE).from(this).where(ID.eq(storeId)).fetchOne(0, String::class.java)
         }
+    }
+
+
+    override fun getStoreComponentVersionLogs(
+        dslContext: DSLContext,
+        storeCode: String
+    ): Result<Record3<String, String, LocalDateTime>>? {
+        val tes = TExtensionService.T_EXTENSION_SERVICE
+        val tesvl = TExtensionServiceVersionLog.T_EXTENSION_SERVICE_VERSION_LOG
+        return dslContext.select(tes.VERSION, tesvl.CONTENT, tes.UPDATE_TIME)
+            .from(tes)
+            .join(tesvl)
+            .on(tes.ID.eq(tesvl.SERVICE_ID))
+            .where(tes.SERVICE_STATUS.eq(ExtServiceStatusEnum.RELEASED.status.toByte()).and(tes.SERVICE_CODE.eq(storeCode)))
+            .fetch()
+
     }
 }
