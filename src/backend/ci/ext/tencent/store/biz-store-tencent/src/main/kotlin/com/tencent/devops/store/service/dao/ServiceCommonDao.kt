@@ -192,16 +192,26 @@ class ServiceCommonDao : AbstractStoreCommonDao() {
 
     override fun getStoreComponentVersionLogs(
         dslContext: DSLContext,
-        storeCode: String
+        storeCode: String,
+        page: Int?,
+        pageSize: Int?
     ): Result<Record3<String, String, LocalDateTime>>? {
         val tes = TExtensionService.T_EXTENSION_SERVICE
         val tesvl = TExtensionServiceVersionLog.T_EXTENSION_SERVICE_VERSION_LOG
-        return dslContext.select(tes.VERSION, tesvl.CONTENT, tes.UPDATE_TIME)
+        val baseStep = dslContext.select(tes.VERSION, tesvl.CONTENT, tes.UPDATE_TIME)
             .from(tes)
             .join(tesvl)
             .on(tes.ID.eq(tesvl.SERVICE_ID))
-            .where(tes.SERVICE_STATUS.eq(ExtServiceStatusEnum.RELEASED.status.toByte()).and(tes.SERVICE_CODE.eq(storeCode)))
-            .fetch()
+            .where(
+                tes.SERVICE_STATUS.eq(ExtServiceStatusEnum.RELEASED.status.toByte()).and(tes.SERVICE_CODE.eq(storeCode))
+            )
+
+
+        if (null != page && null != pageSize) {
+            baseStep.limit((page - 1) * pageSize, pageSize)
+        }
+
+        return baseStep.fetch()
 
     }
 }

@@ -1,10 +1,11 @@
 package com.tencent.devops.store.common.service.impl
 
+import com.tencent.devops.common.api.pojo.Page
 import com.tencent.devops.common.api.pojo.Result
 import com.tencent.devops.store.common.dao.StoreVersionLogDao
 import com.tencent.devops.store.common.service.StoreComponentVersonLogService
 import com.tencent.devops.store.pojo.common.enums.StoreTypeEnum
-import com.tencent.devops.store.pojo.common.version.StoreVersionLogs
+import com.tencent.devops.store.pojo.common.version.StoreVersionLogInfo
 import org.jooq.DSLContext
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -32,21 +33,40 @@ class TxStoreComponentVersonLogServiceImpl:  StoreComponentVersonLogService(){
     override fun getStoreComponentVersionLogs(
         userId: String,
         storeCode: String,
-        storeType: StoreTypeEnum
-    ): Result<StoreVersionLogs> {
+        storeType: StoreTypeEnum,
+        page: Int,
+        pageSize: Int
+    ): Result<Page<StoreVersionLogInfo>> {
+        var count = 0
 
         val storeVersionLogList =
             storeVersionLogDao.getStoreComponentVersionLogs(dslContext, storeCode, storeType.type.toByte())
 
-        var versionLogInfos = storeVersionLogList?.takeIf { it.isNotEmpty }
-            ?.map { createStoreVersionLogInfo(it, storeType) }
-
-        if (versionLogInfos.isNullOrEmpty()) {
-            versionLogInfos = try {
-                getStoreCommonDao(storeType.name).getStoreComponentVersionLogs(dslContext, storeCode)
-                    ?.map { createStoreVersionLogInfo(it, storeType) }
-                    ?: emptyList()
-
+        val versionLogInfos = if (storeVersionLogList?.isNotEmpty == true) {
+            count = storeVersionLogList.size
+            storeVersionLogDao.getStoreComponentVersionLogs(
+                dslContext,
+                storeCode,
+                storeType.type.toByte(),
+                page,
+                pageSize
+            )?.map { createStoreVersionLogInfo(it, storeType) } ?: emptyList()
+        } else {
+            try {
+                val VersionLogList =
+                    getStoreCommonDao(storeType.name).getStoreComponentVersionLogs(dslContext, storeCode)
+                if (VersionLogList?.isNotEmpty == true) {
+                    count = VersionLogList.size
+                    storeVersionLogDao.getStoreComponentVersionLogs(
+                        dslContext,
+                        storeCode,
+                        storeType.type.toByte(),
+                        page,
+                        pageSize
+                    )?.map { createStoreVersionLogInfo(it, storeType) } ?: emptyList()
+                } else {
+                    emptyList()
+                }
             } catch (e: Exception) {
                 logger.error(
                     "getStoreComponentVersionLogs error:${
@@ -55,11 +75,10 @@ class TxStoreComponentVersonLogServiceImpl:  StoreComponentVersonLogService(){
                 )
                 emptyList()
             }
-
-
         }
 
-        return Result(StoreVersionLogs(versionLogInfos!!.size, versionLogInfos))
+
+        return Result(Page(count = count.toLong(), page = page, pageSize = pageSize, records = versionLogInfos))
     }
 
 }

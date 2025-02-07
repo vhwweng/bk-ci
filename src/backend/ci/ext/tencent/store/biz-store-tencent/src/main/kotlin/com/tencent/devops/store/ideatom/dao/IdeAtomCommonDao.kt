@@ -155,16 +155,25 @@ class IdeAtomCommonDao : AbstractStoreCommonDao() {
 
     override fun getStoreComponentVersionLogs(
         dslContext: DSLContext,
-        storeCode: String
+        storeCode: String,
+        page: Int?,
+        pageSize: Int?
     ): Result<Record3<String, String, LocalDateTime>>? {
         val ideAtom = TIdeAtom.T_IDE_ATOM
         val ideAtomVersionLogs = TIdeAtomVersionLog.T_IDE_ATOM_VERSION_LOG
-        return dslContext.select(ideAtom.VERSION, ideAtomVersionLogs.CONTENT, ideAtom.UPDATE_TIME)
+        val baseStep = dslContext.select(ideAtom.VERSION, ideAtomVersionLogs.CONTENT, ideAtom.UPDATE_TIME)
             .from(ideAtom)
             .join(ideAtomVersionLogs)
             .on(ideAtom.ID.eq(ideAtomVersionLogs.ATOM_ID))
-            .where(ideAtom.ATOM_STATUS.eq(IdeAtomStatusEnum.RELEASED.status.toByte()).and(ideAtom.ATOM_CODE.eq(storeCode)))
-            .fetch()
+            .where(
+                ideAtom.ATOM_STATUS.eq(IdeAtomStatusEnum.RELEASED.status.toByte()).and(ideAtom.ATOM_CODE.eq(storeCode))
+            )
+
+        if (null != page && null != pageSize) {
+            baseStep.limit((page - 1) * pageSize, pageSize)
+        }
+
+        return baseStep.fetch()
 
     }
 }
