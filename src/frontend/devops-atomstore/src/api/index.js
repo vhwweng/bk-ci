@@ -108,6 +108,6 @@ export default {
         return vue.$ajax.get(`${prefix}/user/store/statistic/types/${storeType}/codes/${storeCode}/errorCode`)
     },
     getVersionLogs (storeType, code, params) {
-        return vue.$ajax.get(`${prefix}/user/store/components/${storeType}/${code}/getVersionLogs`, { params })
+        return vue.$ajax.get(`${prefix}/user/store/components/types/${storeType}/codes/${code}/version/logs/get`, { params })
     }
 }
