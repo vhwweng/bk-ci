@@ -173,6 +173,4 @@ class TemplateCommonDao : AbstractStoreCommonDao() {
             baseStep.fetchOne(0, Long::class.java) ?: 0L
         }
     }
-
-
 }

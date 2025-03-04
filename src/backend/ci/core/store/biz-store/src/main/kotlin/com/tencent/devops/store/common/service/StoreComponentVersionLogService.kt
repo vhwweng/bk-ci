@@ -29,12 +29,9 @@ abstract class StoreComponentVersionLogService {
     @Autowired
     lateinit var dslContext: DSLContext
 
-
     companion object {
         val HAS_TAG = setOf(StoreTypeEnum.ATOM)
         private val logger = LoggerFactory.getLogger(StoreComponentVersionLogService::class.java)
-
-
     }
 
     fun getStoreComponentVersionLogs(
@@ -44,7 +41,6 @@ abstract class StoreComponentVersionLogService {
         page: Int,
         pageSize: Int
     ): Result<Page<StoreVersionLogInfo>> {
-
         var count: Long
 
         count =
@@ -78,20 +74,13 @@ abstract class StoreComponentVersionLogService {
                 } else {
                     emptyList()
                 }
-            } catch (e: Exception) {
-                logger.error(
-                    "getStoreComponentVersionLogs error:${
-                        e.message
-                    }"
-                )
+            } catch (ignored: Throwable) {
+                logger.error("getStoreComponentVersionLogs error", ignored)
                 emptyList()
             }
         }
-
-
         return Result(Page(count = count, page = page, pageSize = pageSize, records = versionLogInfos))
     }
-
 
     private fun getStoreCommonDao(storeType: String): AbstractStoreCommonDao {
         return SpringContextUtil.getBean(AbstractStoreCommonDao::class.java, "${storeType}_COMMON_DAO")
@@ -118,11 +107,9 @@ abstract class StoreComponentVersionLogService {
                 DateTimeUtil.convertLocalDateTimeToDate(updateTime),
                 DateTimeUtil.YYYY_MM_DD
             )
-            "prod-v${version}-$updateTimeStr"
+            "prod-v$version-$updateTimeStr"
         } else {
             " "
         }
     }
-
-
 }

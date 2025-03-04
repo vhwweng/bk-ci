@@ -119,8 +119,6 @@ interface StoreComponentQueryService {
         storeCode: String
     ): StoreShowVersionInfo
 
-
-
     /**
      * 根据组件id获取组件版本发布日志
      */
@@ -131,5 +129,4 @@ interface StoreComponentQueryService {
         page: Int,
         pageSize: Int
     ): Result<Page<StoreVersionLogInfo>>
-
 }

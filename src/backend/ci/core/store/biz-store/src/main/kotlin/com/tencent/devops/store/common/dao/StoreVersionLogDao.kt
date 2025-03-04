@@ -114,7 +114,6 @@ class StoreVersionLogDao {
         }
     }
 
-
     fun getStoreComponentVersionLogs(
         dslContext: DSLContext,
         storeCode: String,
@@ -133,11 +132,8 @@ class StoreVersionLogDao {
                     .and(tsb.STORE_TYPE.eq(storeType).and(tsb.STATUS.eq(StoreStatusEnum.RELEASED.name)))
             )
         baseStep.limit((page - 1) * pageSize, pageSize)
-
         return baseStep.fetch()
-
     }
-
 
     fun countStoreComponentVersionLogs(
         dslContext: DSLContext,
@@ -155,11 +151,6 @@ class StoreVersionLogDao {
                 tsb.STORE_CODE.eq(storeCode)
                     .and(tsb.STORE_TYPE.eq(storeType).and(tsb.STATUS.eq(StoreStatusEnum.RELEASED.name)))
             )
-
-
         return baseStep.fetchOne(0, Long::class.java) ?: 0L
-
-
     }
-
 }
