@@ -175,7 +175,7 @@ object PipelineUtils {
         }
         val fixedTriggerContainer = triggerContainer.copy(
             params = params,
-            templateVariables = if (templateParams.isEmpty()) {
+            templateParams = if (templateParams.isEmpty()) {
                 null
             } else {
                 templateParams
@@ -208,14 +208,14 @@ object PipelineUtils {
         staticViews: List<String> = emptyList()
     ): Model {
         val templateTrigger = templateModel.getTriggerContainer()
-        val instanceParam = if (templateTrigger.templateVariables == null) {
+        val instanceParam = if (templateTrigger.templateParams == null) {
             BuildPropertyCompatibilityTools.mergeProperties(templateTrigger.params, param ?: emptyList())
         } else {
             BuildPropertyCompatibilityTools.mergeProperties(
                 from = templateTrigger.params,
                 to = BuildPropertyCompatibilityTools.mergeProperties(
                     // 模板常量需要变成流水线常量
-                    from = templateTrigger.templateVariables!!.map { it.copy(constant = true) },
+                    from = templateTrigger.templateParams!!.map { it.copy(constant = true) },
                     to = param ?: emptyList()
                 )
             )
