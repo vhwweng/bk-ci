@@ -74,6 +74,7 @@ import com.tencent.devops.common.archive.pojo.BkRepoFile
 import com.tencent.devops.common.archive.pojo.PackageVersionInfo
 import com.tencent.devops.common.archive.pojo.ProjectMetadata
 import com.tencent.devops.common.archive.pojo.QueryData
+import com.tencent.devops.common.archive.pojo.QueryNodeInfo
 import com.tencent.devops.common.archive.pojo.RepoCreateRequest
 import com.tencent.devops.common.archive.pojo.defender.ApkDefenderRequest
 import com.tencent.devops.common.archive.pojo.defender.ApkDefenderTasks
@@ -1221,6 +1222,20 @@ class BkRepoClient constructor(
             }
             throw RemoteServiceException(responseData.message ?: responseData.code.toString(), this.code)
         }
+    }
+
+    fun getStoreComponentPkgSize(
+        authorization: String,
+        projectId: String,
+        repoName: String,
+        fullPath: String,
+    ): QueryNodeInfo {
+        val url = "${getGatewayUrl()}/bkrepo/api/service/repository/api/node/detail/$projectId/$repoName/$fullPath"
+        val request = Request.Builder()
+            .url(url)
+            .header("Authorization", authorization).get().build()
+        return doRequest(request).resolveResponse<Response<QueryNodeInfo>>()!!.data!!
+
     }
 
     companion object {
