@@ -1238,6 +1238,7 @@ class BkRepoClient constructor(
 
     }
 
+
     companion object {
         private val logger = LoggerFactory.getLogger(BkRepoClient::class.java)
         private val JSON_MEDIA_TYPE = MediaTypes.APPLICATION_JSON.toMediaTypeOrNull()
