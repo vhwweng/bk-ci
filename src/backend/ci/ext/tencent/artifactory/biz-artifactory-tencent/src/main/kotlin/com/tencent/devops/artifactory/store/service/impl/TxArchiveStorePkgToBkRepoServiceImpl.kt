@@ -29,9 +29,12 @@ package com.tencent.devops.artifactory.store.service.impl
 
 import com.tencent.devops.artifactory.constant.REALM_BK_REPO
 import com.tencent.devops.artifactory.pojo.enums.BkRepoEnum
+import com.tencent.devops.artifactory.store.config.TxBkRepoStoreConfig
 import com.tencent.devops.common.api.constant.CommonMessageCode
 import com.tencent.devops.common.api.exception.ErrorCodeException
 import com.tencent.devops.store.pojo.common.enums.StoreTypeEnum
+import okhttp3.Credentials
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Primary
 import org.springframework.stereotype.Service
@@ -40,6 +43,10 @@ import org.springframework.stereotype.Service
 @Service
 @ConditionalOnProperty(prefix = "artifactory", name = ["realm"], havingValue = REALM_BK_REPO)
 class TxArchiveStorePkgToBkRepoServiceImpl : ArchiveStorePkgToBkRepoServiceImpl() {
+
+    @Autowired
+    private lateinit var txBkRepoStoreConfig: TxBkRepoStoreConfig
+
 
     override fun getBkRepoProjectId(storeType: StoreTypeEnum): String {
         return bkRepoStoreConfig.bkrepoStoreProjectName
@@ -63,6 +70,52 @@ class TxArchiveStorePkgToBkRepoServiceImpl : ArchiveStorePkgToBkRepoServiceImpl(
                 throw ErrorCodeException(errorCode = CommonMessageCode.ERROR_CLIENT_REST_ERROR)
             }
         }
+    }
+
+    override fun getRepoStoreConfig(storeType: StoreTypeEnum): Triple<String, String, String> {
+
+        val projectName: String
+        val userName: String
+        val password: String
+        when (storeType.name) {
+            StoreTypeEnum.SERVICE.name -> {
+                projectName = txBkRepoStoreConfig.bkrepoExtServiceProjectName
+                userName = txBkRepoStoreConfig.bkrepoExtServiceUserName
+                password = txBkRepoStoreConfig.bkrepoExtServicePassword
+            }
+
+            else -> {
+                projectName = bkRepoStoreConfig.bkrepoStoreProjectName
+                userName = bkRepoStoreConfig.bkrepoStoreUserName
+                password = bkRepoStoreConfig.bkrepoStorePassword
+            }
+        }
+
+
+        val repoName = when (storeType) {
+            StoreTypeEnum.ATOM -> {
+                BkRepoEnum.PLUGIN.repoName
+            }
+
+            StoreTypeEnum.SERVICE -> {
+                BkRepoEnum.SERVICE.repoName
+            }
+
+            StoreTypeEnum.DEVX -> {
+                BkRepoEnum.DEVX.repoName
+            }
+
+            else -> {
+                throw ErrorCodeException(errorCode = CommonMessageCode.ERROR_CLIENT_REST_ERROR)
+            }
+        }
+
+        return Triple(
+            projectName,
+            Credentials.basic(userName, password),
+            repoName
+        )
+
     }
 
     override fun deleteStorePkg(userId: String, storeCode: String, storeType: StoreTypeEnum) {
