@@ -39,7 +39,7 @@ import com.tencent.devops.store.pojo.ideatom.enums.IdeAtomStatusEnum
 import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.Record
-import org.jooq.Record3
+import org.jooq.Record4
 import org.jooq.Result
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
@@ -158,10 +158,10 @@ class IdeAtomCommonDao : AbstractStoreCommonDao() {
         storeCode: String,
         page: Int,
         pageSize: Int
-    ): Result<Record3<String, String, LocalDateTime>>? {
+    ): Result<Record4<String, String, LocalDateTime,String>>? {
         val ideAtom = TIdeAtom.T_IDE_ATOM
         val ideAtomVersionLogs = TIdeAtomVersionLog.T_IDE_ATOM_VERSION_LOG
-        val baseStep = dslContext.select(ideAtom.VERSION, ideAtomVersionLogs.CONTENT, ideAtom.UPDATE_TIME)
+        val baseStep = dslContext.select(ideAtom.VERSION, ideAtomVersionLogs.CONTENT, ideAtom.UPDATE_TIME,ideAtomVersionLogs.MODIFIER)
             .from(ideAtom)
             .join(ideAtomVersionLogs)
             .on(ideAtom.ID.eq(ideAtomVersionLogs.ATOM_ID))

@@ -50,7 +50,7 @@ import com.tencent.devops.store.pojo.extservice.enums.ExtServiceStatusEnum
 import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.Record
-import org.jooq.Record3
+import org.jooq.Record4
 import org.jooq.Result
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
@@ -195,10 +195,10 @@ class ServiceCommonDao : AbstractStoreCommonDao() {
         storeCode: String,
         page: Int,
         pageSize: Int
-    ): Result<Record3<String, String, LocalDateTime>>? {
+    ): Result<Record4<String, String, LocalDateTime, String>>? {
         val tes = TExtensionService.T_EXTENSION_SERVICE
         val tesvl = TExtensionServiceVersionLog.T_EXTENSION_SERVICE_VERSION_LOG
-        val baseStep = dslContext.select(tes.VERSION, tesvl.CONTENT, tes.UPDATE_TIME)
+        val baseStep = dslContext.select(tes.VERSION, tesvl.CONTENT, tes.UPDATE_TIME,tesvl.MODIFIER)
             .from(tes)
             .join(tesvl)
             .on(tes.ID.eq(tesvl.SERVICE_ID))
