@@ -1236,9 +1236,7 @@ class BkRepoClient constructor(
             .url(url)
             .headers(getCommonHeaders(userId, projectId).toHeaders()).build()
         return doRequest(request).resolveResponse<Response<QueryNodeInfo>>()!!.data!!
-
     }
-
 
     companion object {
         private val logger = LoggerFactory.getLogger(BkRepoClient::class.java)

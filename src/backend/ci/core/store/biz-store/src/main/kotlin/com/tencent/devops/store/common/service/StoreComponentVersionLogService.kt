@@ -3,16 +3,20 @@ package com.tencent.devops.store.common.service
 import com.tencent.devops.common.api.pojo.Page
 import com.tencent.devops.common.api.pojo.Result
 import com.tencent.devops.common.api.util.DateTimeUtil
+import com.tencent.devops.common.api.util.JsonUtil
 import com.tencent.devops.common.service.utils.SpringContextUtil
 import com.tencent.devops.store.common.dao.AbstractStoreCommonDao
 import com.tencent.devops.store.common.dao.StoreBaseQueryDao
 import com.tencent.devops.store.common.dao.StoreVersionLogDao
+import com.tencent.devops.store.pojo.atom.AtomPackageInfo
 import com.tencent.devops.store.pojo.common.enums.StoreTypeEnum
 import com.tencent.devops.store.pojo.common.version.StoreVersionLogInfo
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDateTime
 
 abstract class StoreComponentVersionLogService {
@@ -33,7 +37,6 @@ abstract class StoreComponentVersionLogService {
         val HAS_TAG = setOf(StoreTypeEnum.ATOM)
         private val logger = LoggerFactory.getLogger(StoreComponentVersionLogService::class.java)
     }
-
 
     fun getStoreComponentVersionLogs(
         storeCode: String,
@@ -70,7 +73,6 @@ abstract class StoreComponentVersionLogService {
         return fetchLogs(storeCode = storeCode, storeType = storeType, page = page, pageSize = pageSize, count = count)
     }
 
-
     private fun fetchLogs(
         dao: AbstractStoreCommonDao? = null,
         storeCode: String,
@@ -87,18 +89,14 @@ abstract class StoreComponentVersionLogService {
                 page = page,
                 pageSize = pageSize
             )?.map { createStoreVersionLogInfo(record = it, storeType = storeType, sizeFlag = false) }
-
         } else {
-
             dao.getStoreComponentVersionLogs(
                 dslContext = dslContext,
                 storeCode = storeCode,
                 page = page,
                 pageSize = pageSize
             )?.map { createStoreVersionLogInfo(record = it, storeType = storeType) }
-
         }
-
         return Result(Page(count = count, page = page, pageSize = pageSize, records = versionLogInfos ?: emptyList()))
     }
 
@@ -109,7 +107,7 @@ abstract class StoreComponentVersionLogService {
     private fun createStoreVersionLogInfo(
         record: Record,
         storeType: StoreTypeEnum,
-        //todo 目前先查询t_atom等表的包大小  暂时不查迁移到T_STORE_BASE表，这个等后续迁移了历史数据再做调整
+        // todo 目前先查询t_atom等表的包大小  暂时不查迁移到T_STORE_BASE表，这个等后续迁移了历史数据再做调整
         sizeFlag: Boolean = true
     ): StoreVersionLogInfo {
         return StoreVersionLogInfo(
@@ -141,28 +139,39 @@ abstract class StoreComponentVersionLogService {
         }
     }
 
-
+    @Suppress("UNCHECKED_CAST")
     private fun getPackageSize(record: Record, storeType: StoreTypeEnum): String {
+        fun formatSizeInMB(sizeInBytes: BigDecimal): String =
+            String.format(
+                "%.2f M",
+                sizeInBytes.divide(BigDecimal(1024.0 * 1024.0), 2, RoundingMode.HALF_UP).toDouble()
+            )
+
         return when (storeType) {
             StoreTypeEnum.ATOM -> {
-                record.get("PACKAGE_SIZE") as? String ?: ""
+                val size = record.get("PACKAGE_SIZE") as? String ?: return ""
+                if (size.isNotEmpty()) {
+                    val atomPackageInfo = JsonUtil.to(size, List::class.java) as? List<AtomPackageInfo>
+                    atomPackageInfo?.let {
+                        if (it.isNotEmpty()) {
+                            val totalSize = it.map { info -> BigDecimal(info.size) }.reduce(BigDecimal::add)
+                            return formatSizeInMB(totalSize)
+                        }
+                    }
+                }
+                ""
             }
 
             StoreTypeEnum.IMAGE -> {
-                val size = record.get("IMAGE_SIZE") as? String ?: ""
+                val size = record.get("IMAGE_SIZE") as? String ?: return ""
                 if (size.isNotEmpty()) {
-                    String.format("%.2f MB", size.toLong() / (1024.0 * 1024.0))
+                    return formatSizeInMB(BigDecimal(size.toLong()))
                 } else {
                     ""
                 }
-
             }
 
-            else -> {
-                ""
-            }
+            else -> ""
         }
     }
-
-
 }

@@ -95,6 +95,7 @@ import com.tencent.devops.store.constant.StoreMessageCode.USER_UPLOAD_PACKAGE_IN
 import com.tencent.devops.store.pojo.atom.AtomEnvRequest
 import com.tencent.devops.store.pojo.atom.AtomFeatureRequest
 import com.tencent.devops.store.pojo.atom.AtomOfflineReq
+import com.tencent.devops.store.pojo.atom.AtomPackageInfo
 import com.tencent.devops.store.pojo.atom.AtomReleaseRequest
 import com.tencent.devops.store.pojo.atom.GetAtomConfigResult
 import com.tencent.devops.store.pojo.atom.GetAtomQualityConfigResult
@@ -1491,33 +1492,63 @@ abstract class AtomReleaseServiceImpl @Autowired constructor() : AtomReleaseServ
         }
     }
 
+    override fun updateAtomLatestTestFlag(userId: String, atomCode: String, atomId: String) {
+        dslContext.transaction { configuration ->
+            val transactionContext = DSL.using(configuration)
+            marketAtomDao.resetAtomLatestTestFlagByCode(
+                dslContext = transactionContext,
+                atomCode = atomCode
+            )
+            marketAtomDao.setupAtomLatestTestFlagById(
+                dslContext = transactionContext,
+                atomId = atomId,
+                userId = userId,
+                latestFlag = true
+            )
+        }
+    }
 
     private fun saveAtomSize(atomId: String) {
-        val list = mutableListOf<Long>()
+        val atomPackageInfoList = mutableListOf<AtomPackageInfo>()
         try {
             val atomEnvRecords = marketAtomEnvInfoDao.getMarketAtomEnvInfosByAtomId(dslContext, atomId)
-            val totalRecords = atomEnvRecords?.size ?: 0
-
-            atomEnvRecords?.mapNotNull { record ->
-                record.pkgPath?.let { pkgPath ->
-                    val nodeSize = client.get(ServiceArchiveComponentPkgResource::class)
-                        .getFileSize(StoreTypeEnum.ATOM, pkgPath).data ?: 0L
-                    logger.info("getStoreComponentPkgSize, node:$nodeSize")
-                    if (nodeSize > 0) nodeSize else null
+            atomEnvRecords?.let { records ->
+                val totalRecords = records.size
+                val atomSizeInfoList = records.mapNotNull { record ->
+                    record.pkgPath?.let { pkgPath ->
+                        val nodeSize = client.get(ServiceArchiveComponentPkgResource::class)
+                            .getFileSize(StoreTypeEnum.ATOM, pkgPath).data ?: 0L
+                        if (nodeSize > 0) {
+                            AtomPackageInfo(
+                                osName = record.osName,
+                                arch = record.osArch,
+                                size = nodeSize
+                            )
+                        } else {
+                            null
+                        }
+                    }
                 }
-            }?.let { sizes -> list.addAll(sizes) }
-
-            //都成功时才存储
-            if (list.isNotEmpty() && list.size == totalRecords) {
-                val size = list.joinToString(", ") { byte ->
-                    String.format("%.2f MB", byte / (1024.0 * 1024.0))
+                // 都成功时才存储
+                if (atomSizeInfoList.size == totalRecords) {
+                    val size = JsonUtil.toJson(atomPackageInfoList)
+                    marketAtomVersionLogDao.updateAtomVersionByAtomId(dslContext, atomId, size)
+                } else {
+                    logger.warn(
+                        "Not all sizes were collected for atomId: $atomId, " +
+                                "collected: ${atomSizeInfoList.size}," +
+                                " expected: $totalRecords"
+                    )
                 }
-                marketAtomVersionLogDao.updateAtomVersionByAtomId(dslContext, atomId, size)
-            }else{
-                logger.warn("Not all sizes were collected for atomId: $atomId, collected: ${list.size}, expected: $totalRecords")
+            } ?: run {
+                logger.warn("No records found for atomId: $atomId")
             }
         } catch (ignore: Throwable) {
-            logger.error("saveAtomSize error for atomId: $atomId, error: ${ignore.message}", ignore)
+            logger.error(
+                "saveAtomSize error for atomId: $atomId, " +
+                        "error: ${ignore.message}",
+                ignore
+            )
         }
     }
 }
