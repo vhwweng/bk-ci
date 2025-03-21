@@ -1491,23 +1491,6 @@ abstract class AtomReleaseServiceImpl @Autowired constructor() : AtomReleaseServ
             )
         }
     }
-
-    override fun updateAtomLatestTestFlag(userId: String, atomCode: String, atomId: String) {
-        dslContext.transaction { configuration ->
-            val transactionContext = DSL.using(configuration)
-            marketAtomDao.resetAtomLatestTestFlagByCode(
-                dslContext = transactionContext,
-                atomCode = atomCode
-            )
-            marketAtomDao.setupAtomLatestTestFlagById(
-                dslContext = transactionContext,
-                atomId = atomId,
-                userId = userId,
-                latestFlag = true
-            )
-        }
-    }
-
     private fun saveAtomSize(atomId: String) {
         val atomPackageInfoList = mutableListOf<AtomPackageInfo>()
         try {
