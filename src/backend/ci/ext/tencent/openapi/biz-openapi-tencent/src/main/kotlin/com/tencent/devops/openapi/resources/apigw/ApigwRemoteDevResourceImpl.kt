@@ -30,6 +30,8 @@ import com.tencent.devops.remotedev.pojo.image.DeleteImageResp
 import com.tencent.devops.remotedev.pojo.image.ListImagesData
 import com.tencent.devops.remotedev.pojo.image.ListImagesResp
 import com.tencent.devops.remotedev.pojo.image.MakeWorkspaceImageReq
+import com.tencent.devops.remotedev.pojo.itsm.BKItsmCreateTicketReq
+import com.tencent.devops.remotedev.pojo.itsm.BKItsmCreateTicketRespData
 import com.tencent.devops.remotedev.pojo.op.OpProjectWorkspaceAssignData
 import com.tencent.devops.remotedev.pojo.op.WorkspaceNotifyData
 import com.tencent.devops.remotedev.pojo.project.EnableRemotedevData
@@ -318,9 +320,13 @@ class ApigwRemoteDevResourceImpl @Autowired constructor(private val client: Clie
         return client.get(ServiceRemoteDevResource::class).fetchExpertSupRecordAny(id)
     }
 
-    override fun getWindowsQuota(userId: String, type: QuotaType): Result<Map<String, Map<String, Int>>> {
-        logger.info("getWindowsQuota $userId|$type")
-        return client.get(ServiceRemoteDevResource::class).getWindowsQuota(userId, type)
+    override fun getWindowsQuota(
+        userId: String,
+        type: QuotaType?,
+        zoneType: WindowsResourceZoneConfigType
+    ): Result<Map<String, Map<String, Int>>> {
+        logger.info("getWindowsQuota $userId|$type|$zoneType")
+        return client.get(ServiceRemoteDevResource::class).getWindowsQuota(userId, type, zoneType)
     }
 
     override fun updateUsageLimit(
@@ -628,9 +634,10 @@ class ApigwRemoteDevResourceImpl @Autowired constructor(private val client: Clie
         return client.get(ServiceRemoteDevResource::class).enableProjectRemotedev(userId, data)
     }
 
+    @Deprecated("废弃，后续会删除")
     override fun updateRemotedevManager(userId: String, data: UpdateRemotedevDataManagers): Result<Boolean> {
         logger.info("updateRemotedevManager |$userId|$data")
-        return client.get(ServiceRemoteDevResource::class).updateProjectRemotedevManager(userId, data)
+        return Result(true)
     }
 
     override fun fetchImages(userId: String, data: ListImagesData): Result<ListImagesResp?> {
@@ -646,5 +653,13 @@ class ApigwRemoteDevResourceImpl @Autowired constructor(private val client: Clie
     ): Result<DeleteImageResp> {
         logger.info("deleteImage |$userId|$projectId|$imageId|$delaySeconds")
         return client.get(ServiceRemoteDevResource::class).deleteImage(userId, projectId, imageId, delaySeconds)
+    }
+
+    override fun createItsmTicket(
+        userId: String,
+        createReqStr: BKItsmCreateTicketReq
+    ): Result<BKItsmCreateTicketRespData> {
+        logger.info("createItsmTicket |$userId|$createReqStr")
+        return client.get(ServiceRemoteDevResource::class).createItsmTicket(userId, createReqStr)
     }
 }

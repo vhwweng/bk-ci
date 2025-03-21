@@ -35,9 +35,9 @@ import com.tencent.devops.common.api.constant.HTTP_400
 import com.tencent.devops.common.api.exception.ErrorCodeException
 import com.tencent.devops.common.api.exception.RemoteServiceException
 import com.tencent.devops.common.api.util.UUIDUtil
-import com.tencent.devops.common.audit.ActionAuditContent
-import com.tencent.devops.common.auth.api.ActionId
-import com.tencent.devops.common.auth.api.ResourceTypeId
+import com.tencent.devops.common.audit.TencentActionAuditContent
+import com.tencent.devops.common.auth.api.TencentActionId
+import com.tencent.devops.common.auth.api.TencentResourceTypeId
 import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.event.dispatcher.SampleEventDispatcher
 import com.tencent.devops.common.service.trace.TraceTag
@@ -53,6 +53,7 @@ import com.tencent.devops.remotedev.dao.RemoteDevSettingDao
 import com.tencent.devops.remotedev.dao.WindowsResourceTypeDao
 import com.tencent.devops.remotedev.dao.WorkspaceDao
 import com.tencent.devops.remotedev.dao.WorkspaceHistoryDao
+import com.tencent.devops.remotedev.dao.WorkspaceJoinDao
 import com.tencent.devops.remotedev.dao.WorkspaceOpHistoryDao
 import com.tencent.devops.remotedev.dao.WorkspaceSharedDao
 import com.tencent.devops.remotedev.dao.WorkspaceWindowsDao
@@ -115,7 +116,8 @@ class CreateControl @Autowired constructor(
     private val gitProxyTGitService: GitProxyTGitService,
     private val workspaceSharedDao: WorkspaceSharedDao,
     private val softwareManageService: SoftwareManageService,
-    private val imageManageService: ImageManageService
+    private val imageManageService: ImageManageService,
+    private val workspaceJoinDao: WorkspaceJoinDao
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(CreateControl::class.java)
@@ -124,13 +126,13 @@ class CreateControl @Autowired constructor(
 
     // 用于控制台上创建
     @ActionAuditRecord(
-        actionId = ActionId.CGS_CREATE,
+        actionId = TencentActionId.CGS_CREATE,
         instance = AuditInstanceRecord(
-            resourceType = ResourceTypeId.CGS
+            resourceType = TencentResourceTypeId.CGS
         ),
-        attributes = [AuditAttribute(name = ActionAuditContent.PROJECT_CODE_TEMPLATE, value = "#projectId")],
+        attributes = [AuditAttribute(name = TencentActionAuditContent.PROJECT_CODE_TEMPLATE, value = "#projectId")],
         scopeId = "#projectId",
-        content = ActionAuditContent.CGS_CREATE_CONTENT
+        content = TencentActionAuditContent.CGS_CREATE_CONTENT
     )
     fun projectCreateWorkspace(
         pmUserId: String,
@@ -448,16 +450,6 @@ class CreateControl @Autowired constructor(
     }
 
     // 处理创建工作空间逻辑，用于客户端上创建
-    @ActionAuditRecord(
-        actionId = ActionId.CGS_CREATE,
-        instance = AuditInstanceRecord(
-            resourceType = ResourceTypeId.CGS
-        ),
-        attributes = [AuditAttribute(name = ActionAuditContent.PROJECT_CODE_TEMPLATE, value = "#projectId")],
-        scopeId = "#projectId",
-        content = ActionAuditContent.CGS_CREATE_CONTENT
-    )
-
     fun afterCreateWorkspace(event: RemoteDevUpdateEvent) {
         val ws = workspaceDao.fetchAnyWorkspace(dslContext, workspaceName = event.workspaceName)
             ?: throw ErrorCodeException(
@@ -638,7 +630,9 @@ class CreateControl @Autowired constructor(
                 return false
             }
 
-        val copy = workspaceDao.fetchAnyWorkspace(dslContext, workspaceName = oldWorkspaceName)
+        val copy = oldWorkspaceName?.let {
+            workspaceJoinDao.fetchAnyWindowsWorkspace(dslContext, workspaceName = oldWorkspaceName)
+        }
         val projectId = when {
             copy != null -> copy.projectId
             else -> checkNotNull(projectCode)
@@ -667,7 +661,8 @@ class CreateControl @Autowired constructor(
             workspaceSystemType = systemType,
             ownerType = checkOwnerType,
             winConfigId = windowsConfig.id?.toInt(),
-            zoneId = vm.zoneId
+            zoneId = vm.zoneId,
+            imageId = copy?.imageId ?: ""
         )
         if (copy != null) {
             // 当存在引用副本的情况，将细分多种情况

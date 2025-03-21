@@ -25,14 +25,16 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package com.tencent.devops.process.pojo.pipeline
+package com.tencent.devops.common.pipeline.pojo.element.atom
 
-import io.swagger.v3.oas.annotations.media.Schema
-
-@Schema(title = "构建模型-ID")
-data class ProjectBuildId(
-    @get:Schema(title = "构建ID", required = true)
-    val id: String,
-    @get:Schema(title = "项目ID", required = true)
-    val projectId: String
+/**
+ * 插件检查参数
+ */
+data class ElementBatchCheckParam(
+    val projectId: String?,
+    val pipelineId: String,
+    val userId: String,
+    val contextMap: Map<String, String>,
+    val isTemplate: Boolean,
+    val oauthUser: String?
 )

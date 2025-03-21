@@ -31,6 +31,8 @@ import com.tencent.devops.remotedev.pojo.image.DeleteImageResp
 import com.tencent.devops.remotedev.pojo.image.ListImagesData
 import com.tencent.devops.remotedev.pojo.image.ListImagesResp
 import com.tencent.devops.remotedev.pojo.image.MakeWorkspaceImageReq
+import com.tencent.devops.remotedev.pojo.itsm.BKItsmCreateTicketReq
+import com.tencent.devops.remotedev.pojo.itsm.BKItsmCreateTicketRespData
 import com.tencent.devops.remotedev.pojo.op.OpProjectWorkspaceAssignData
 import com.tencent.devops.remotedev.pojo.op.WorkspaceNotifyData
 import com.tencent.devops.remotedev.pojo.project.EnableRemotedevData
@@ -52,6 +54,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import javax.ws.rs.Consumes
 import javax.ws.rs.DELETE
+import javax.ws.rs.DefaultValue
 import javax.ws.rs.GET
 import javax.ws.rs.HeaderParam
 import javax.ws.rs.POST
@@ -438,7 +441,11 @@ interface ApigwRemoteDevResource {
         userId: String,
         @Parameter(description = "获取类型", required = true)
         @QueryParam("type")
-        type: QuotaType
+        type: QuotaType?,
+        @Parameter(description = "地域类型", required = true)
+        @QueryParam("zoneType")
+        @DefaultValue("DEFAULT")
+        zoneType: WindowsResourceZoneConfigType
     ): Result<Map<String, Map<String, Int>>>
 
     @Operation(summary = "更新项目/个人在使用云桌面上的配额", tags = ["v4_app_remotedev_usage_limit"])
@@ -943,4 +950,15 @@ interface ApigwRemoteDevResource {
         @QueryParam("delaySeconds")
         delaySeconds: Int?
     ): Result<DeleteImageResp>
+
+    @Operation(summary = "创建ITSM单据流程", tags = ["v4_app_remotedev_create_itsm_ticket"])
+    @POST
+    @Path("/create_itsm_ticket")
+    fun createItsmTicket(
+        @Parameter(description = "用户ID", required = true, example = AUTH_HEADER_USER_ID_DEFAULT_VALUE)
+        @HeaderParam(AUTH_HEADER_USER_ID)
+        userId: String,
+        @Parameter(description = "请求参数", required = true)
+        createReqStr: BKItsmCreateTicketReq
+    ): Result<BKItsmCreateTicketRespData>
 }

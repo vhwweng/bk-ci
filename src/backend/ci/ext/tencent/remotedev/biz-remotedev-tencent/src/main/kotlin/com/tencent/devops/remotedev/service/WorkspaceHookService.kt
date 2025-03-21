@@ -177,7 +177,7 @@ class WorkspaceHookService @Autowired constructor(
         if (ip.isEmpty() || hooks.isEmpty()) {
             logger.warn("installHook|ip: $ip, hooks: $hooks")
         }
-        val actions = hooks.groupBy { it.executionType }.map { (executionType, group) ->
+        val actions = hooks.filter { it.enable }.groupBy { it.executionType }.map { (executionType, group) ->
             val executables = group.map { it.executableCommand() }
             Actions.Action(
                 type = Actions.Type.load(executionType).name.lowercase(),
@@ -187,7 +187,7 @@ class WorkspaceHookService @Autowired constructor(
         val vmIp = ip.joinToString(",")
         val actionString = JsonUtil.toJson(Actions(actions), false)
         val req = RequestBody(
-            name = "【云桌面】钩子安装 $vmIp",
+            name = "【云桌面】钩子安装 将实施共${ip.size}个ip",
             constants = mapOf(
                 "\${vm_ip}" to vmIp,
                 "\${operation_type}" to "install",
@@ -226,7 +226,7 @@ class WorkspaceHookService @Autowired constructor(
         }
         val vmIp = ip.joinToString(",")
         val req = RequestBody(
-            name = "【云桌面】钩子卸载 $vmIp",
+            name = "【云桌面】钩子卸载 将实施共${ip.size}个ip",
             constants = mapOf(
                 "\${vm_ip}" to vmIp,
                 "\${operation_type}" to "uninstall"
