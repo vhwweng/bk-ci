@@ -582,4 +582,9 @@ object ProcessMessageCode {
     // [xxx]流水线循环调用[xxx]流水线，形成循环依赖
     const val BK_OTHER_SUB_PIPELINE_CIRCULAR_DEPENDENCY_ERROR_MESSAGE =
         "bkOtherSubPipelineCircularDependencyErrorMessage"
+
+    // 自定义模板名称
+    const val BK_CUSTOM_PIPELINE_TEMPLATE_NAME = "bkCustomPipelineTemplateName"
+    // 研发商店模板名称
+    const val BK_MARKET_PIPELINE_TEMPLATE_NAME = "bkMarketPipelineTemplateName"
 }
