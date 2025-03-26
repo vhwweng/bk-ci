@@ -161,7 +161,12 @@ class IdeAtomCommonDao : AbstractStoreCommonDao() {
     ): Result<Record4<String, String, LocalDateTime,String>>? {
         val ideAtom = TIdeAtom.T_IDE_ATOM
         val ideAtomVersionLogs = TIdeAtomVersionLog.T_IDE_ATOM_VERSION_LOG
-        val baseStep = dslContext.select(ideAtom.VERSION, ideAtomVersionLogs.CONTENT, ideAtom.UPDATE_TIME,ideAtomVersionLogs.MODIFIER)
+        val baseStep = dslContext.select(
+            ideAtom.VERSION,
+            ideAtomVersionLogs.CONTENT,
+            ideAtom.UPDATE_TIME,
+            ideAtomVersionLogs.MODIFIER
+        )
             .from(ideAtom)
             .join(ideAtomVersionLogs)
             .on(ideAtom.ID.eq(ideAtomVersionLogs.ATOM_ID))
