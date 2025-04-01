@@ -164,8 +164,8 @@ class ProjectSignatureManageService(
 
     private fun buildProjectInfo(projectNames: List<String>): String {
         if (projectNames.isEmpty()) return ""
-        val firstName = projectNames.first()
-        val otherNames = " ".plus(projectNames.drop(1).joinToString(" / "))
+        val firstName = "《${projectNames.first()}》"
+        val otherNames = "《".plus(projectNames.drop(1).joinToString("》/《 ")).plus("》")
         return I18nUtil.getCodeLanMessage(
             messageCode = ProjectMessageCode.BK_SIGNATURE_PROJECT_INFORMATION,
             params = arrayOf(firstName, otherNames)
