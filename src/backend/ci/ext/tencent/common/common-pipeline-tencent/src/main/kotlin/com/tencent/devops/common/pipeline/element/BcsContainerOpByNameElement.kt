@@ -60,7 +60,7 @@ data class BcsContainerOpByNameElement(
     @get:Schema(title = "模板集名称", required = false)
     val musterName: String?,
     @get:Schema(title = "模板名称", required = false)
-    val templateName: String?,
+    override var templateName: String?,
     @get:Schema(title = "模板集版本名称", required = false)
     val versionName: String?,
 
