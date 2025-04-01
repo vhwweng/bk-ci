@@ -82,11 +82,10 @@ class UpdateCmdbNodeService @Autowired constructor(
         logger.info("cmdbNodeCount=$cmdbNodeCount")
         // 1.更新节点的公司CMDB状态与属性信息
         cmdbNodeCount.takeIf { it > 0 }.run {
-            val pageSize = 10
-            val totalPages = PageUtil.calTotalPage(pageSize, cmdbNodeCount.toLong())
+            val totalPages = PageUtil.calTotalPage(DEFAULT_PAGE_SIZE, cmdbNodeCount.toLong())
             var nodeId = 0L
             for (page in 1..totalPages) {
-                nodeId = updateCmdbNodeInfoByPage(nodeId, pageSize)
+                nodeId = updateCmdbNodeInfoByPage(nodeId, 10)
                 logger.debug("updateCmdbNodeInfo|nodeId={}, page={}", nodeId, page)
             }
         }
