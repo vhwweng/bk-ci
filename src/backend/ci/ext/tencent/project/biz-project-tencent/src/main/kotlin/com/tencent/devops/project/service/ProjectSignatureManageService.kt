@@ -46,7 +46,7 @@ class ProjectSignatureManageService(
     private lateinit var clientId: String
 
     fun listSignatureProjects(): List<String> {
-        return redisOperation.get(projectNeedToCheck)?.split(",") ?: emptyList()
+        return redisOperation.get(PROJECT_NEED_TO_CHECK)?.split(",") ?: emptyList()
     }
 
     fun getSignatureStatus(
@@ -54,13 +54,14 @@ class ProjectSignatureManageService(
         userId: String
     ): UserSignatureStatusResponse {
         // 校验项目是否需要校验
-        val projectsNeedToCheck = redisOperation.get(projectNeedToCheck)?.split(",") ?: emptyList()
+        val projectsNeedToCheck = redisOperation.get(PROJECT_NEED_TO_CHECK)?.split(",") ?: emptyList()
         if (!projectsNeedToCheck.contains(projectId)) {
             return UserSignatureStatusResponse(
                 userId = userId,
                 signed = true
             )
         }
+        logger.info("get signature status :$projectId|$userId")
         // 若不为项目成员，直接返回异常
         val hasPermission = authProjectApi.isProjectUser(
             user = userId,
@@ -74,64 +75,56 @@ class ProjectSignatureManageService(
                 params = arrayOf(userId, projectId)
             )
         }
-        val projectNames = projectService.list(projectsNeedToCheck).map { it.projectName }
-        val targetLanguage = I18nUtil.getLanguage(userId)
-        val projectNamesLocalized = if (targetLanguage == DEFAULT_LOCALE_LANGUAGE) {
-            projectNames
-        } else {
-            projectsNeedToCheck
-        }
-        val projectInformation = buildProjectInfo(projectNamesLocalized)
-        logger.info("get signature status :$projectId|$userId|$projectInformation")
-        val isUserSigned = redisOperation.get(USER_SIGNATURE_STATUS_CHECK.plus(userId))
-        if (isUserSigned?.toBoolean() == true) {
-            return UserSignatureStatusResponse(
-                userId = userId,
-                signed = true
-            )
-        }
-        val url = "$signatureUrl/api/v1/signature/signature_status"
-        val nonce = generateRandomString(12)
-        val timestamp = System.currentTimeMillis()
-        val token = cryptoToken(
-            nonce = nonce,
-            timestamp = timestamp
-        )
-        val userNickName = client.get(ServiceDeptResource::class).getUserInfo(
-            userId = userId,
-            name = userId
-        ).data?.displayName ?: throw ErrorCodeException(
-            errorCode = ProjectMessageCode.FAILED_USER_INFORMATION,
-            params = arrayOf(userId)
-        )
-
-        val body = SignatureStatusQueryReq(
-            user = userId,
-            nick = userNickName,
-            tof_id = userId
-        )
-        val requestBody = objectMapper.writeValueAsString(body).toRequestBody(mediaType)
-
-        val request = Request.Builder()
-            .url(url)
-            .post(requestBody)
-            .addHeader("Smoba-Clientid", clientId)
-            .addHeader("Smoba-Nonce", nonce)
-            .addHeader("Smoba-Timestamp", timestamp.toString())
-            .addHeader("Smoba-Signature", token)
-            .build()
         try {
+            val projectNames = projectService.list(projectsNeedToCheck).map { it.projectName }
+            val isUserSigned = redisOperation.get(USER_SIGNATURE_STATUS_CHECK.plus(userId))
+            if (isUserSigned?.toBoolean() == true) {
+                return UserSignatureStatusResponse(
+                    userId = userId,
+                    signed = true
+                )
+            }
+            val url = "$signatureUrl/api/v1/signature/signature_status"
+            val nonce = generateRandomString(12)
+            val timestamp = System.currentTimeMillis()
+            val token = cryptoToken(
+                nonce = nonce,
+                timestamp = timestamp
+            )
+            val userNickName = client.get(ServiceDeptResource::class).getUserInfo(
+                userId = userId,
+                name = userId
+            ).data?.displayName ?: throw ErrorCodeException(
+                errorCode = ProjectMessageCode.FAILED_USER_INFORMATION,
+                params = arrayOf(userId)
+            )
+
+            val body = SignatureStatusQueryReq(
+                user = userId,
+                nick = userNickName,
+                tof_id = userId
+            )
+            val requestBody = objectMapper.writeValueAsString(body).toRequestBody(mediaType)
+
+            val request = Request.Builder()
+                .url(url)
+                .post(requestBody)
+                .addHeader("Smoba-Clientid", clientId)
+                .addHeader("Smoba-Nonce", nonce)
+                .addHeader("Smoba-Timestamp", timestamp.toString())
+                .addHeader("Smoba-Signature", token)
+                .build()
             OkhttpUtils.doHttp(request).use { response ->
                 val responseContent = response.body!!.string()
                 if (!response.isSuccessful) {
-                    logger.warn("request failed, uri:($url)|response: ($response)")
-                    throw RemoteServiceException("request failed, response:($response)")
+                    logger.warn("get signature status failed, uri:($url)|response: ($response)")
+                    throw RemoteServiceException("get signature status request failed, response:($response)")
                 }
                 val queryResponse = JsonUtil.to(responseContent, ResponseDTO::class.java)
                 logger.info("get signature status response :$queryResponse")
                 if (queryResponse.result != "success") {
-                    logger.warn("request failed, url:($url)|response:($response)")
-                    throw RemoteServiceException("request failed, response:(${response.message})")
+                    logger.warn("get signature status failed, url:($url)|response:($response)")
+                    throw RemoteServiceException("get signature status request failed, response:(${response.message})")
                 }
                 val data = queryResponse.data ?: throw OperationException(
                     I18nUtil.getCodeLanMessage(
@@ -145,6 +138,13 @@ class ProjectSignatureManageService(
                         signed = true
                     )
                 } else {
+                    val targetLanguage = I18nUtil.getLanguage(userId)
+                    val projectNamesLocalized = if (targetLanguage == DEFAULT_LOCALE_LANGUAGE) {
+                        projectNames
+                    } else {
+                        projectsNeedToCheck
+                    }
+                    val projectInformation = buildProjectInfo(projectNamesLocalized)
                     UserSignatureStatusResponse(
                         userId = data.user,
                         signed = false,
@@ -154,15 +154,18 @@ class ProjectSignatureManageService(
                 }
             }
         } catch (e: Exception) {
-            logger.error("Failed to get $url.", e)
-            throw RemoteServiceException("request failed, response:($e)")
+            logger.error("Failed to get signature status", e)
+            return UserSignatureStatusResponse(
+                userId = userId,
+                signed = true
+            )
         }
     }
 
     private fun buildProjectInfo(projectNames: List<String>): String {
         if (projectNames.isEmpty()) return ""
         val firstName = projectNames.first()
-        val otherNames = projectNames.drop(1).joinToString(",")
+        val otherNames = projectNames.drop(1).joinToString("/")
         return I18nUtil.getCodeLanMessage(
             messageCode = ProjectMessageCode.BK_SIGNATURE_PROJECT_INFORMATION,
             params = arrayOf(firstName, otherNames)
@@ -215,7 +218,7 @@ class ProjectSignatureManageService(
         private val logger = LoggerFactory.getLogger(ProjectSignatureManageService::class.java)
         private val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
         private const val USER_SIGNATURE_STATUS_CHECK = "user.signature.status.check."
-        private const val projectNeedToCheck = "projects.signature.check"
+        private const val PROJECT_NEED_TO_CHECK = "projects.signature.check"
         private const val SUCCESS_STATUS = 2
     }
 }
