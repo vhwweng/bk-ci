@@ -85,7 +85,8 @@ class UpdateCmdbNodeService @Autowired constructor(
             val totalPages = PageUtil.calTotalPage(DEFAULT_PAGE_SIZE, cmdbNodeCount.toLong())
             var nodeId = 0L
             for (page in 1..totalPages) {
-                nodeId = updateCmdbNodeInfoByPage(nodeId, totalPages)
+                nodeId = updateCmdbNodeInfoByPage(nodeId, 10)
+                logger.debug("updateCmdbNodeInfo|nodeId={}, page={}", nodeId, page)
             }
         }
         logger.info(
