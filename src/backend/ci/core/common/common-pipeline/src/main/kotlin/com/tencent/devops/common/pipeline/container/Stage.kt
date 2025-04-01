@@ -27,7 +27,7 @@
 
 package com.tencent.devops.common.pipeline.container
 
-import com.tencent.devops.common.pipeline.IModelTemplate
+import com.tencent.devops.common.pipeline.ITemplateFunction
 import com.tencent.devops.common.pipeline.option.StageControlOption
 import com.tencent.devops.common.pipeline.pojo.StagePauseCheck
 import com.tencent.devops.common.pipeline.pojo.time.BuildRecordTimeCost
@@ -71,10 +71,19 @@ data class Stage(
     var executeCount: Int? = null,
     @get:Schema(title = "各项耗时", required = true)
     var timeCost: BuildRecordTimeCost? = null,
+    @get:Schema(title = "来源于模版", required = false)
+    override var fromTemplate: Boolean? = false,
+    @get:Schema(title = "模板路径", required = false)
     override var template: String? = null,
-    override var ref: String? = null,
-    override var variables: Map<String, String>? = null
-) : IModelTemplate {
+    @get:Schema(title = "模板ID", required = false)
+    override var templateId: String? = null,
+    @get:Schema(title = "模板名称", required = false)
+    override var templateName: String? = null,
+    @get:Schema(title = "版本", required = false)
+    override var templateVersion: String? = null,
+    @get:Schema(title = "模板参数构建", required = false)
+    override var templateVariables: Map<String, Any>? = null
+) : ITemplateFunction {
     /**
      * 刷新stage的所有配置，如果是初始化则重置所有历史数据
      */

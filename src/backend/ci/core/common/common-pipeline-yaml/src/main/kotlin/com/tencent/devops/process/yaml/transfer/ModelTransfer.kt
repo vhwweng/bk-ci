@@ -46,12 +46,9 @@ import com.tencent.devops.process.yaml.transfer.pojo.ModelTransferInput
 import com.tencent.devops.process.yaml.transfer.pojo.YamlTransferInput
 import com.tencent.devops.process.yaml.v3.enums.SyntaxDialectType
 import com.tencent.devops.process.yaml.v3.models.Concurrency
-import com.tencent.devops.process.yaml.v3.models.Extends
-import com.tencent.devops.process.yaml.v3.models.GitNotices
 import com.tencent.devops.process.yaml.v3.models.IPreTemplateScriptBuildYamlParser
 import com.tencent.devops.process.yaml.v3.models.Notices
 import com.tencent.devops.process.yaml.v3.models.PacNotices
-import com.tencent.devops.process.yaml.v3.models.PreTemplateScriptBuildYamlParser
 import com.tencent.devops.process.yaml.v3.models.PreTemplateScriptBuildYamlV3Parser
 import com.tencent.devops.process.yaml.v3.models.on.IPreTriggerOn
 import com.tencent.devops.process.yaml.v3.models.on.PreTriggerOn
@@ -205,7 +202,6 @@ class ModelTransfer @Autowired constructor(
                 }
             )
         }
-        checkExtends(yamlInput.yaml.templateFilter().extends, model)
         yamlInput.aspectWrapper.setModel4Model(model, PipelineTransferAspectWrapper.AspectType.AFTER)
         return model
     }
@@ -214,14 +210,7 @@ class ModelTransfer @Autowired constructor(
         modelInput.aspectWrapper.setModel4Model(modelInput.model, PipelineTransferAspectWrapper.AspectType.BEFORE)
         val label = prepareYamlLabels(modelInput.userId, modelInput.setting).ifEmpty { null }
         val yaml = when (modelInput.version) {
-//            YamlVersion.V2_0 -> PreTemplateScriptBuildYamlParser(
-//                version = "v2.0",
-//                name = modelInput.setting.pipelineName,
-//                desc = modelInput.setting.desc.ifEmpty { null },
-//                label = label,
-//                resources = modelInput.model.resources,
-//                notices = makeNoticesV2(modelInput.setting)
-//            )
+            YamlVersion.V2_0 -> throw PipelineTransferException(YAML_NOT_VALID, arrayOf("only support v3"))
             YamlVersion.V3_0 -> PreTemplateScriptBuildYamlV3Parser(
                 version = "v3.0",
                 name = modelInput.setting.pipelineName,
@@ -231,27 +220,12 @@ class ModelTransfer @Autowired constructor(
                 notices = makeNoticesV3(modelInput.setting),
                 syntaxDialect = makeSyntaxDialect(modelInput.setting)
             )
-
-            else -> {
-                throw PipelineTransferException(
-                    YAML_NOT_VALID,
-                    arrayOf("only support v3")
-                )
-            }
-        }
-        if (modelInput.model.template != null) {
-            yaml.extends = Extends(
-                modelInput.model.template!!,
-                modelInput.model.ref,
-                modelInput.model.variables
-            )
-            return yaml
         }
 
         val triggerOn = makeTriggerOn(modelInput)
         when (modelInput.version) {
             YamlVersion.V2_0 -> {
-                (yaml as PreTemplateScriptBuildYamlParser).triggerOn = triggerOn.firstOrNull() as PreTriggerOn?
+                throw PipelineTransferException(YAML_NOT_VALID, arrayOf("only support v3"))
             }
 
             YamlVersion.V3_0 -> {
@@ -276,7 +250,7 @@ class ModelTransfer @Autowired constructor(
             stages.add(ymlStage)
         }
         yaml.stages = TransferMapper.anyTo(stages)
-        yaml.variables = variableTransfer.makeVariableFromModel(modelInput.model)
+        yaml.variables = variableTransfer.makeVariableFromModel(modelInput.model.getTriggerContainer())
         val lastStage = modelInput.model.stages.last()
         val finally = if (lastStage.finally) {
             modelInput.aspectWrapper.setModelStage4Model(lastStage, PipelineTransferAspectWrapper.AspectType.BEFORE)
@@ -290,29 +264,14 @@ class ModelTransfer @Autowired constructor(
         yaml.finally = finally as LinkedHashMap<String, Any>?
         yaml.concurrency = makeConcurrency(modelInput.setting)
         yaml.customBuildNum = modelInput.setting.buildNumRule
-        yaml.recommendedVersion = variableTransfer.makeRecommendedVersion(modelInput.model)
+        yaml.recommendedVersion = variableTransfer.makeRecommendedVersion(modelInput.model.getTriggerContainer())
         yaml.disablePipeline = (modelInput.setting.runLockType == PipelineRunLockType.LOCK ||
             modelInput.pipelineInfo?.locked == true).nullIfDefault(false)
         modelInput.aspectWrapper.setYaml4Yaml(yaml, PipelineTransferAspectWrapper.AspectType.AFTER)
         return yaml
     }
 
-    private fun makeNoticesV2(setting: PipelineSetting): List<GitNotices>? {
-        val res = mutableListOf<GitNotices>()
-        setting.successSubscriptionList?.forEach {
-            if (it.types.isNotEmpty()) {
-                res.add(GitNotices(it, IfType.SUCCESS.name))
-            }
-        }
-        setting.failSubscriptionList?.forEach {
-            if (it.types.isNotEmpty()) {
-                res.add(GitNotices(it, IfType.FAILURE.name))
-            }
-        }
-        return res.ifEmpty { null }
-    }
-
-    private fun makeNoticesV3(setting: PipelineSetting): List<PacNotices>? {
+    fun makeNoticesV3(setting: PipelineSetting): List<PacNotices>? {
         val res = mutableListOf<PacNotices>()
         setting.successSubscriptionList?.ifEmpty { setting.successSubscription?.let { listOf(it) } }?.forEach {
             if (it.types.isNotEmpty()) {
@@ -468,13 +427,5 @@ class ModelTransfer @Autowired constructor(
             }
         }
         return labels
-    }
-
-    private fun checkExtends(extends: Extends?, model: Model) {
-        if (extends != null) {
-            model.template = extends.template
-            model.ref = extends.ref
-            model.variables = extends.variables
-        }
     }
 }

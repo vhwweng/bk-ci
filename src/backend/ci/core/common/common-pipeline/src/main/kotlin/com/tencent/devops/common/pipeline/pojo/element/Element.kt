@@ -30,7 +30,7 @@ package com.tencent.devops.common.pipeline.pojo.element
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.tencent.devops.common.api.util.JsonUtil
-import com.tencent.devops.common.pipeline.IModelTemplate
+import com.tencent.devops.common.pipeline.ITemplateFunction
 import com.tencent.devops.common.pipeline.NameAndValue
 import com.tencent.devops.common.pipeline.enums.BuildStatus
 import com.tencent.devops.common.pipeline.enums.StartType
@@ -91,7 +91,8 @@ import org.json.JSONObject
     JsonSubTypes.Type(value = QualityGateInElement::class, name = QualityGateInElement.classType),
     JsonSubTypes.Type(value = QualityGateOutElement::class, name = QualityGateOutElement.classType),
     JsonSubTypes.Type(value = CodeTGitWebHookTriggerElement::class, name = CodeTGitWebHookTriggerElement.classType),
-    JsonSubTypes.Type(value = CodeP4WebHookTriggerElement::class, name = CodeP4WebHookTriggerElement.classType)
+    JsonSubTypes.Type(value = CodeP4WebHookTriggerElement::class, name = CodeP4WebHookTriggerElement.classType),
+    JsonSubTypes.Type(value = StepTemplateElement::class, name = StepTemplateElement.classType)
 )
 @Suppress("ALL")
 @Schema(title = "Element 基类")
@@ -147,11 +148,20 @@ abstract class Element(
     open var classifyName: String? = null,
     @get:Schema(title = "任务运行进度", required = false)
     open var progressRate: Double? = null,
+    var asyncStatus: String? = null,
+    @get:Schema(title = "来源于模版", required = false)
+    override var fromTemplate: Boolean? = false,
+    @get:Schema(title = "模板路径", required = false)
     override var template: String? = null,
-    override var ref: String? = null,
-    override var variables: Map<String, String>? = null,
-    var asyncStatus: String? = null
-) : IModelTemplate {
+    @get:Schema(title = "模板ID", required = false)
+    override var templateId: String? = null,
+    @get:Schema(title = "模板名称", required = false)
+    override var templateName: String? = null,
+    @get:Schema(title = "版本", required = false)
+    override var templateVersion: String? = null,
+    @get:Schema(title = "模板参数构建", required = false)
+    override var templateVariables: Map<String, Any>? = null
+) : ITemplateFunction {
 
     open fun getAtomCode() = getClassType()
 

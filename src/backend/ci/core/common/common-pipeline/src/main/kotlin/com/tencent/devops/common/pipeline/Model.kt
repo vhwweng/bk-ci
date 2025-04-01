@@ -27,6 +27,7 @@
 
 package com.tencent.devops.common.pipeline
 
+import com.tencent.devops.common.api.constant.CommonMessageCode
 import com.tencent.devops.common.pipeline.container.Container
 import com.tencent.devops.common.pipeline.container.NormalContainer
 import com.tencent.devops.common.pipeline.container.Stage
@@ -35,8 +36,11 @@ import com.tencent.devops.common.pipeline.container.VMBuildContainer
 import com.tencent.devops.common.pipeline.event.CallBackEvent
 import com.tencent.devops.common.pipeline.event.PipelineCallbackEvent
 import com.tencent.devops.common.pipeline.event.ProjectPipelineCallBack
+import com.tencent.devops.common.pipeline.pojo.element.trigger.ManualTriggerElement
 import com.tencent.devops.common.pipeline.pojo.time.BuildRecordTimeCost
 import com.tencent.devops.common.pipeline.pojo.transfer.Resources
+import com.tencent.devops.common.pipeline.template.ITemplateModel
+import com.tencent.devops.common.web.utils.I18nUtil
 import io.swagger.v3.oas.annotations.media.Schema
 
 @Suppress("ALL")
@@ -67,15 +71,9 @@ data class Model(
     var staticViews: List<String> = emptyList(),
     @get:Schema(title = "各项耗时", required = true)
     var timeCost: BuildRecordTimeCost? = null,
-    @get:Schema(title = "模板地址", required = true)
-    override var template: String? = null,
-    @get:Schema(title = "模板版本", required = true)
-    override var ref: String? = null,
-    @get:Schema(title = "模板入参", required = true)
-    override var variables: Map<String, String>? = null,
     @get:Schema(title = "模板资源", required = true)
     val resources: Resources? = null
-) : IModelTemplate {
+) : ITemplateModel {
     @get:Schema(title = "提交时流水线最新版本号", required = false)
     var latestVersion: Int = 0
 
@@ -229,4 +227,40 @@ data class Model(
     }
 
     fun getTriggerContainer() = stages[0].containers[0] as TriggerContainer
+
+    companion object {
+        const val classType = "model"
+        fun defaultModel(
+            pipelineName: String,
+            userId: String
+        ): Model {
+            return Model(
+                name = pipelineName,
+                desc = "",
+                stages = listOf(
+                    Stage(
+                        id = "stage-1",
+                        containers = listOf(
+                            TriggerContainer(
+                                id = "0",
+                                name = "trigger",
+                                elements = listOf(
+                                    ManualTriggerElement(
+                                        id = "T-1-1-1",
+                                        name = I18nUtil.getCodeLanMessage(
+                                            CommonMessageCode.BK_MANUAL_TRIGGER,
+                                            language = I18nUtil.getLanguage(
+                                                userId
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+                pipelineCreator = userId
+            )
+        }
+    }
 }

@@ -25,9 +25,22 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package com.tencent.devops.process.pojo.template
+package com.tencent.devops.process.pojo.template.v2
 
-enum class TemplateInstanceBaseStatus {
-    INIT,
-    INSTANCING
-}
+import com.tencent.devops.common.pipeline.pojo.setting.PipelineSetting
+import com.tencent.devops.common.pipeline.pojo.transfer.YamlWithVersion
+import com.tencent.devops.common.pipeline.template.ITemplateModel
+import com.tencent.devops.process.pojo.enums.PipelineTemplateType
+import io.swagger.v3.oas.annotations.media.Schema
+
+@Schema(title = "流水线模板模型转换结果")
+data class PTemplateModelTransferResult(
+    @get:Schema(title = "模版类型", required = false)
+    val templateType: PipelineTemplateType,
+    @get:Schema(title = "流水线模板模型", required = true)
+    val templateModel: ITemplateModel,
+    @get:Schema(title = "流水线设置", required = false)
+    val templateSetting: PipelineSetting,
+    @get:Schema(title = "当前yaml内容", required = false)
+    val yamlWithVersion: YamlWithVersion? = null
+)

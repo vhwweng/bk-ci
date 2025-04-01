@@ -29,10 +29,13 @@ package com.tencent.devops.process.yaml.v3.models.stage
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.tencent.devops.process.yaml.v3.models.job.Job
+import com.tencent.devops.common.pipeline.pojo.transfer.CodeTemplate
 import com.tencent.devops.process.yaml.v3.check.StageCheck
 import com.tencent.devops.process.yaml.v3.models.IfField
+import com.tencent.devops.process.yaml.v3.models.job.IJob
 import io.swagger.v3.oas.annotations.media.Schema
+
+interface IStage
 
 /**
  * WARN: 请谨慎修改这个类 , 不要随意添加或者删除变量 , 否则可能导致依赖yaml的功能(gitci)异常
@@ -49,7 +52,7 @@ data class Stage(
     @get:Schema(title = "fast-kill")
     @JsonProperty("fast-kill")
     val fastKill: Boolean? = false,
-    val jobs: List<Job>,
+    val jobs: List<IJob>,
     @get:Schema(title = "if-modify")
     @JsonProperty("if-modify")
     val ifModify: List<String>? = null,
@@ -59,4 +62,12 @@ data class Stage(
     @get:Schema(title = "check-out")
     @JsonProperty("check-out")
     val checkOut: StageCheck?
-)
+) : IStage
+
+data class StageTemplate(
+    override val template: String?,
+    override val templateId: String?,
+    override val templateName: String?,
+    override val ref: String?,
+    override val variables: Map<String, Any>?
+) : IStage, CodeTemplate

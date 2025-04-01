@@ -58,8 +58,9 @@ data class TriggerContainer(
     var templateParams: List<BuildFormProperty>? = null,
     @get:Schema(title = "构建版本号", required = false)
     var buildNo: BuildNo? = null,
-    @get:Schema(title =
-        "是否可重试-仅限于构建详情展示重试，目前未作为编排的选项，暂设置为null不存储",
+    @get:Schema(
+        title =
+            "是否可重试-仅限于构建详情展示重试，目前未作为编排的选项，暂设置为null不存储",
         required = false,
         readOnly = true
     )
@@ -82,9 +83,18 @@ data class TriggerContainer(
     override var timeCost: BuildRecordTimeCost? = null,
     @get:Schema(title = "开机任务序号", required = false, readOnly = true)
     override var startVMTaskSeq: Int? = null,
+    @get:Schema(title = "来源于模版", required = false)
+    override var fromTemplate: Boolean? = false,
+    @get:Schema(title = "模板路径", required = false)
     override var template: String? = null,
-    override var ref: String? = null,
-    override var variables: Map<String, String>? = null
+    @get:Schema(title = "模板ID", required = false)
+    override var templateId: String? = null,
+    @get:Schema(title = "模板名称", required = false)
+    override var templateName: String? = null,
+    @get:Schema(title = "版本", required = false)
+    override var templateVersion: String? = null,
+    @get:Schema(title = "模板参数构建", required = false)
+    override var templateVariables: Map<String, Any>? = null
 ) : Container {
     companion object {
         const val classType = "trigger"
@@ -110,5 +120,9 @@ data class TriggerContainer(
 
     override fun transformCompatibility() {
         super.transformCompatibility()
+    }
+
+    override fun copyElements(elements: List<Element>): Container {
+        return this.copy(elements = elements)
     }
 }
