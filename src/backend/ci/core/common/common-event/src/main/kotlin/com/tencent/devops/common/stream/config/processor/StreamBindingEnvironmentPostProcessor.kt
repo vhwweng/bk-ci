@@ -58,7 +58,8 @@ class StreamBindingEnvironmentPostProcessor : EnvironmentPostProcessor, Ordered 
                     groupName = source["spring.application.name"].toString()
                 }
                 if (source["spring.cloud.stream.enabled"].toString() == "false") {
-                    return
+                    println("StreamBindingEnvironmentPostProcessor disabled")
+                    return@postProcessEnvironment
                 }
             }
             if (groupName.isBlank()) {
