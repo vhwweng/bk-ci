@@ -353,6 +353,17 @@
       return asyncGet(GW_URL_PREFIX + '/project/api/user/projects/')
     }
 
+    function fetchDiclosurePrjoectList () {
+        try {
+            return asyncGet(
+                API_URL_PREFIX + '/project/api/user/signature/listSignatureProjects'
+            )
+            
+        } catch (error) {
+            return []
+        }
+    }
+
     function fetchProjectById(projectId) {
       return projectId
         ? asyncGet(
@@ -533,6 +544,7 @@
         fetchAllServices(),
         requestUser(),
         fetchAssetsJSON(),
+        fetchDiclosurePrjoectList(),
         getLocaleBackend(),
         fetchProjectById(pathPid),
       ]).then((response) => {
@@ -541,6 +553,7 @@
         var actionArray = ['setProjectList', 'setServices', 'setUserInfo']
         var projectList = response[0]
         window.INIT_LOCALE = response.pop().language
+        window.diclosurePrjoectList = response.pop()
 
         if (project && project.projectCode) {
           for (var j = 0; j < projectList.length; j++) {

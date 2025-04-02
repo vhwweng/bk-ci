@@ -1088,7 +1088,8 @@
     "batchCopy": "One-click Copy",
     "randomlyGenerate": "<Randomly generate>",
     "enableVersionControl": "Enable version control",
-    "versionControlTip": "Once enabled, uploading files will automatically generate versioned paths within the directory to prevent overwriting files with the same name."
+    "versionControlTip": "Once enabled, uploading files will automatically generate versioned paths within the directory to prevent overwriting files with the same name.",
+    "withoutOption": "The selected item no longer exists or you don't have permission to view it"
   },
   "storeMap": {
     "textarea": "Textarea",
