@@ -51,6 +51,10 @@ class StreamBindingEnvironmentPostProcessor : EnvironmentPostProcessor, Ordered 
     private var groupName = "undefined"
 
     override fun postProcessEnvironment(environment: ConfigurableEnvironment, application: SpringApplication) {
+        if (environment.propertySources.get("spring.cloud.stream.enabled").toString() == "false") {
+            println("StreamBindingEnvironmentPostProcessor disabled")
+            return
+        }
         environment.propertySources.forEach {
             val source = it.source
             if (source is Map<*, *>) {
