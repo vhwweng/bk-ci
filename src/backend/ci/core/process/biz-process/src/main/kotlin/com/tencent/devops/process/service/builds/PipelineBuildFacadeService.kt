@@ -2763,12 +2763,16 @@ class PipelineBuildFacadeService(
             )
         }
         return triggerPipeline(
-            userId = buildInfo.startUser,
+            userId = userId,
             projectId = projectId,
             pipelineId = pipelineId,
             buildId = buildId,
             startParameters = startParameters,
-            startType = startType,
+            startType = if (startType == StartType.WEB_HOOK) {
+                StartType.WEB_HOOK
+            } else {
+                StartType.MANUAL
+            },
             pipelineInfo = readyToBuildPipelineInfo,
             pipelineResourceVersion = resource
         )
