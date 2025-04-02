@@ -31,6 +31,6 @@ dependencies {
     api(project(":ext:tencent:misc:api-monitoring-tencent"))
     api(project(":ext:tencent:common:common-digest-tencent"))
     configurations.forEach {
-        it.exclude("org.springframework.cloud", "spring-cloud-starter-stream-rabbit")
+        it.exclude("org.springframework.cloud", "spring-cloud-stream")
     }
 }
