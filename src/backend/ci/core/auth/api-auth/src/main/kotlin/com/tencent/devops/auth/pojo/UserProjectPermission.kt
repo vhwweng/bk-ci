@@ -20,10 +20,10 @@ data class UserProjectPermission(
         val otherObj = other as UserProjectPermission
         return memberId == otherObj.memberId && projectCode == otherObj.projectCode
             && action == otherObj.action && iamGroupId == otherObj.iamGroupId
-            && expireTime.timestamp() == otherObj.expireTime.timestampmilli()
+            && expireTime.timestampmilli() == otherObj.expireTime.timestampmilli()
     }
 
     override fun hashCode(): Int {
-        return Objects.hash(memberId, projectCode, action, iamGroupId, expireTime.timestamp())
+        return Objects.hash(memberId, projectCode, action, iamGroupId, expireTime.timestampmilli())
     }
 }
