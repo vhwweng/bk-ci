@@ -2721,7 +2721,7 @@ class PipelineBuildFacadeService(
         val startType = StartType.toStartType(buildInfo.trigger)
         // 定时触发不存在调试的情况
         val (readyToBuildPipelineInfo, resource, _) = pipelineRepositoryService.getBuildTriggerInfo(
-            projectId, pipelineId, buildInfo.version
+            projectId, pipelineId, null
         )
         if (readyToBuildPipelineInfo.locked == true) {
             throw ErrorCodeException(errorCode = ProcessMessageCode.ERROR_PIPELINE_LOCK)
@@ -2760,12 +2760,16 @@ class PipelineBuildFacadeService(
             )
         }
         return triggerPipeline(
-            userId = buildInfo.startUser,
+            userId = userId,
             projectId = projectId,
             pipelineId = pipelineId,
             buildId = buildId,
             startParameters = startParameters,
-            startType = startType,
+            startType = if (startType == StartType.WEB_HOOK) {
+                StartType.WEB_HOOK
+            } else {
+                StartType.MANUAL
+            },
             pipelineInfo = readyToBuildPipelineInfo,
             pipelineResourceVersion = resource
         )
