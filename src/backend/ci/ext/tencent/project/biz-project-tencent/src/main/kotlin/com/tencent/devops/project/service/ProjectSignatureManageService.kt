@@ -186,7 +186,7 @@ class ProjectSignatureManageService(
         if (callbackInfo.whitelistUser || callbackInfo.status == SUCCESS_STATUS) {
             redisOperation.set(USER_SIGNATURE_STATUS_CHECK.plus(callbackInfo.user), "true")
         } else {
-            redisOperation.set(USER_SIGNATURE_STATUS_CHECK.plus(callbackInfo.user), "false")
+            redisOperation.delete(USER_SIGNATURE_STATUS_CHECK.plus(callbackInfo.user))
         }
         return SignatureCallbackResponse.success()
     }
