@@ -57,10 +57,6 @@ class StreamBindingEnvironmentPostProcessor : EnvironmentPostProcessor, Ordered 
                 if (source.containsKey("spring.application.name")) {
                     groupName = source["spring.application.name"].toString()
                 }
-                if (source["spring.cloud.stream.enabled"].toString() == "false") {
-                    println("StreamBindingEnvironmentPostProcessor disabled")
-                    return@postProcessEnvironment
-                }
             }
             if (groupName.isBlank()) {
                 println("WARNING: application name must be defined in resources/application.yml")
