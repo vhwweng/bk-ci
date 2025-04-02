@@ -2759,7 +2759,7 @@ class PipelineBuildFacadeService(
         if (!checkTriggerResult) {
             throw ErrorCodeException(
                 errorCode = ProcessMessageCode.ERROR_TRIGGER_CONDITION_NOT_MATCH,
-                params = arrayOf(readyToBuildPipelineInfo.versionName ?: "")
+                params = arrayOf(resource.versionName ?: "")
             )
         }
         return triggerPipeline(
