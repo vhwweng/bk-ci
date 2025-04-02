@@ -1083,7 +1083,8 @@
     "batchCopy": "一键复制",
     "randomlyGenerate": "<随机生成>",
     "enableVersionControl": "开启版本管理",
-    "versionControlTip": "开启后，上传文件时，将在目录下自动生成版本路径，避免同名覆盖。"
+    "versionControlTip": "开启后，上传文件时，将在目录下自动生成版本路径，避免同名覆盖。",
+    "withoutOption": "选中项已不存在或你无权限查看"
   },
   "storeMap": {
     "textarea": "文本框",
