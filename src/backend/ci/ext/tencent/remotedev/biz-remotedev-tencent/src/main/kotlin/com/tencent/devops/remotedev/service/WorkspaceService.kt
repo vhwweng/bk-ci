@@ -461,10 +461,13 @@ class WorkspaceService @Autowired constructor(
                 WorkspaceShared.AssignType.VIEWER -> {
                     viewers.putIfAbsent(it.workspaceName, mutableListOf(it.sharedUser))?.add(it.sharedUser)
                 }
+
+                else -> {}
             }
             if (UserUtil.isTaiUser(it.sharedUser)) {
                 taiUsers.add(it.sharedUser)
             }
+
         }
 
         val allConfig = windowsResourceConfigService.getAllType(true, null).associateBy { it.id!! }
@@ -596,6 +599,8 @@ class WorkspaceService @Autowired constructor(
                 WorkspaceShared.AssignType.OWNER -> {
                     owners.putIfAbsent(it.workspaceName, it.sharedUser)
                 }
+
+                else -> {}
             }
         }
 
@@ -1017,7 +1022,7 @@ class WorkspaceService @Autowired constructor(
             if (cgsStatus?.state != ComputerStatusEnum.NORMAL.status) {
                 throw ErrorCodeException(
                     errorCode = ErrorCodeEnum.WORKSPACE_CDS_ERROR.errorCode,
-                    params = arrayOf(workspaceName)
+                    params = arrayOf(workspace.hostIp ?: workspaceName)
                 )
             }
             return startCloudWorkspaceDetail(userId, workspace)
