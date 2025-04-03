@@ -108,6 +108,7 @@ import com.tencent.devops.store.pojo.devx.enums.SourceCodeEnum
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.FilenameUtils
 import org.jooq.DSLContext
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Primary
@@ -149,6 +150,8 @@ class DevxReleaseSpecBusServiceImpl @Autowired constructor(
 
     @Value("\${git.devopsPrivateToken:}")
     private val devopsPrivateToken: String = ""
+
+    private val logger = LoggerFactory.getLogger(DevxReleaseSpecBusServiceImpl::class.java)
 
     override fun doStoreCreatePreBus(storeCreateRequest: StoreCreateRequest) {
         val storeBaseCreateRequest = storeCreateRequest.baseInfo
@@ -457,6 +460,7 @@ class DevxReleaseSpecBusServiceImpl @Autowired constructor(
             Triple(linuxRunInfos, KEY_STORE_LINUX_RUN_CUSTOM_VAR, "linux"),
             Triple(darwinRunInfos, KEY_STORE_DARWIN_RUN_CUSTOM_VAR, "darwin")
         ).forEach { (infos, key, os) ->
+            logger.info("startParam os: $os, key: $key, infos: ${JsonUtil.toJson(infos)}")
             if (infos.isNotEmpty()) {
                 startParamMap[key] = "$os$storeRunCustomVarSuffix"
             }
