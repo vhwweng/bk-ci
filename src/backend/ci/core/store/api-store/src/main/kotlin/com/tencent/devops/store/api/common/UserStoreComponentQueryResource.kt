@@ -54,7 +54,7 @@ import jakarta.ws.rs.Path
 import jakarta.ws.rs.PathParam
 import jakarta.ws.rs.Produces
 import jakarta.ws.rs.QueryParam
-import javax.ws.rs.DefaultValue
+import jakarta.ws.rs.DefaultValue
 import jakarta.ws.rs.core.MediaType
 
 @Tag(name = "USER_STORE_COMPONENT", description = "研发商店-组件查询")
