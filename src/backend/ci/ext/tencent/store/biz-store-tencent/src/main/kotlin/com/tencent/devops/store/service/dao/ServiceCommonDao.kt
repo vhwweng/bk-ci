@@ -205,6 +205,7 @@ class ServiceCommonDao : AbstractStoreCommonDao() {
             .where(
                 tes.SERVICE_STATUS.eq(ExtServiceStatusEnum.RELEASED.status.toByte()).and(tes.SERVICE_CODE.eq(storeCode))
             )
+            .orderBy(tesvl.UPDATE_TIME.desc())
 
 
         baseStep.limit((page - 1) * pageSize, pageSize)

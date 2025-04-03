@@ -77,8 +77,8 @@ class TxArchiveStorePkgToBkRepoServiceImpl : ArchiveStorePkgToBkRepoServiceImpl(
         val projectName: String
         val userName: String
         val password: String
-        when (storeType.name) {
-            StoreTypeEnum.SERVICE.name -> {
+        when (storeType) {
+            StoreTypeEnum.SERVICE -> {
                 projectName = txBkRepoStoreConfig.bkrepoExtServiceProjectName
                 userName = txBkRepoStoreConfig.bkrepoExtServiceUserName
                 password = txBkRepoStoreConfig.bkrepoExtServicePassword

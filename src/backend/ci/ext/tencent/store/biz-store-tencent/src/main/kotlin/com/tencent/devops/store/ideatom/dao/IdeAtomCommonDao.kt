@@ -173,6 +173,7 @@ class IdeAtomCommonDao : AbstractStoreCommonDao() {
             .where(
                 ideAtom.ATOM_STATUS.eq(IdeAtomStatusEnum.RELEASED.status.toByte()).and(ideAtom.ATOM_CODE.eq(storeCode))
             )
+            .orderBy(ideAtomVersionLogs.UPDATE_TIME.desc())
 
         baseStep.limit((page - 1) * pageSize, pageSize)
 
