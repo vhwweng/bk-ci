@@ -462,6 +462,7 @@ class DevxReleaseSpecBusServiceImpl @Autowired constructor(
         ).forEach { (infos, key, os) ->
             logger.info("startParam os: $os, key: $key, infos: ${JsonUtil.toJson(infos)}")
             if (infos.isNotEmpty()) {
+                logger.info("startParam set var os: $os, key: $key, infos: ${JsonUtil.toJson(infos)}")
                 startParamMap[key] = "$os$storeRunCustomVarSuffix"
             }
         }
@@ -494,7 +495,7 @@ class DevxReleaseSpecBusServiceImpl @Autowired constructor(
                 }
             }
         }
-
+        logger.info("startParamMap: ${JsonUtil.toJson(startParamMap)}")
         return startParamMap
     }
 
