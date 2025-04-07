@@ -35,6 +35,7 @@ import com.tencent.devops.process.engine.utils.PipelineUtils
 import com.tencent.devops.process.permission.PipelinePermissionService
 import com.tencent.devops.process.pojo.PipelineVersionReleaseRequest
 import com.tencent.devops.process.pojo.pipeline.PipelineYamlFileInfo
+import com.tencent.devops.process.pojo.pipeline.PipelineYamlFileReleaseReq
 import com.tencent.devops.process.pojo.pipeline.PipelineYamlVo
 import com.tencent.devops.process.pojo.pipeline.version.PipelineTemplateInstanceCreateReq
 import com.tencent.devops.process.pojo.template.TemplateInstanceStatus
@@ -306,19 +307,21 @@ class PipelineTemplateInstanceFacadeService @Autowired constructor(
             }
 
             pipelineYamlFacadeService.pushYamlFile(
-                userId = userId,
-                projectId = projectId,
-                pipelineId = pipelineId,
-                version = PipelineTemplateConstant.INIT_VERSION,
-                versionName = branchName,
-                pipelineName = instance.pipelineName,
-                content = transferResult.yamlWithVersion?.yamlStr ?: "",
-                commitMessage = description ?: "update",
-                repoHashId = yamlInfo.repoHashId,
-                scmType = yamlInfo.scmType!!,
-                filePath = yamlInfo.filePath,
-                targetAction = fixTargetAction,
-                targetBranch = branchName
+                PipelineYamlFileReleaseReq(
+                    userId = userId,
+                    projectId = projectId,
+                    pipelineId = pipelineId,
+                    version = PipelineTemplateConstant.INIT_VERSION,
+                    versionName = branchName,
+                    pipelineName = instance.pipelineName,
+                    content = transferResult.yamlWithVersion?.yamlStr ?: "",
+                    commitMessage = description ?: "update",
+                    repoHashId = yamlInfo.repoHashId,
+                    scmType = yamlInfo.scmType!!,
+                    filePath = yamlInfo.filePath,
+                    targetAction = fixTargetAction,
+                    targetBranch = branchName
+                )
             )
         }
         return pipelineId
