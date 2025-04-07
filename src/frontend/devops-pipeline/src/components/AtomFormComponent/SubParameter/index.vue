@@ -119,7 +119,7 @@
                 this.parameters = values.map(i => {
                     return {
                         ...i,
-                        type: typeMap.get(i.key),
+                        type: typeMap.get(i.key) || 'text',
                         value: isObject(i.value) ? JSON.stringify(i.value) : i.value
                     }
                 })
@@ -146,7 +146,7 @@
                 } else {
                     this.parameters[index].value = ''
                 }
-                this.parameters[index].type = type
+                this.parameters[index].type = type || 'text'
                 this.updateParameters()
             },
 
