@@ -27,10 +27,10 @@
 
 package com.tencent.devops.scm
 
-import com.tencent.devops.common.service.MicroService
 import com.tencent.devops.common.service.MicroServiceApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 
+// TODO 临时方案, 不能让scm的rabbitmq自动启动, 否则会报错
 @SpringBootApplication(
     exclude = [org.springframework.cloud.stream.config.BindersHealthIndicatorAutoConfiguration::class,
         org.springframework.cloud.stream.config.ChannelsEndpointAutoConfiguration::class,
