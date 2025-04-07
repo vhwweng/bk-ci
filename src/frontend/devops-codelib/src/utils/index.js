@@ -23,7 +23,7 @@ import {
     isGithub,
     isSvn,
     isTGit,
-    regionList
+    regionList,
     isScmGit,
     isScmSvn
 } from '../config'
