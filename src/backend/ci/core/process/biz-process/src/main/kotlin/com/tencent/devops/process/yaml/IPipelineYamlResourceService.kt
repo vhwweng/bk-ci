@@ -28,8 +28,9 @@
 package com.tencent.devops.process.yaml
 
 import com.tencent.devops.common.pipeline.enums.BranchVersionAction
+import com.tencent.devops.process.pojo.pipeline.DeletePipelineResult
 import com.tencent.devops.process.pojo.pipeline.DeployPipelineResult
-import com.tencent.devops.process.pojo.pipeline.PipelineYamlFileInfo
+import com.tencent.devops.process.pojo.pipeline.PipelineYamlVo
 import com.tencent.devops.process.yaml.transfer.aspect.IPipelineTransferAspect
 import java.util.LinkedList
 
@@ -46,7 +47,7 @@ interface IPipelineYamlResourceService {
         isDefaultBranch: Boolean,
         description: String? = null,
         aspects: LinkedList<IPipelineTransferAspect>? = null,
-        yamlFileInfo: PipelineYamlFileInfo? = null
+        yamlInfo: PipelineYamlVo? = null
     ): DeployPipelineResult
 
     fun updateYamlPipeline(
@@ -59,7 +60,7 @@ interface IPipelineYamlResourceService {
         isDefaultBranch: Boolean,
         description: String? = null,
         aspects: LinkedList<IPipelineTransferAspect>? = null,
-        yamlFileInfo: PipelineYamlFileInfo? = null
+        yamlInfo: PipelineYamlVo? = null
     ): DeployPipelineResult
 
     fun updateBranchVersion(
@@ -75,7 +76,7 @@ interface IPipelineYamlResourceService {
         userId: String,
         projectId: String,
         pipelineId: String
-    )
+    ): DeletePipelineResult
 
     fun getPipelineName(
         projectId: String,
