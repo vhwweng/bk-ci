@@ -42,6 +42,7 @@
 </template>
 
 <script>
+    import { mapState, mapActions } from 'vuex'
     import P4 from './P4'
     import SVN from './SVN'
     import Git from './Git'
@@ -63,6 +64,7 @@
     } from '../../config/'
     import { parsePathRegion } from '../../utils'
     import dialogMixin from './mixin.js'
+
     export default {
         name: 'codelib-dialog',
         components: {
