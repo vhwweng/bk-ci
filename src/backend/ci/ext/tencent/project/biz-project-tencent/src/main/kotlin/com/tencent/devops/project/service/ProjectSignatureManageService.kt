@@ -53,7 +53,7 @@ class ProjectSignatureManageService(
         projectId: String,
         userId: String
     ): UserSignatureStatusResponse {
-        // 校验项目是否需要校验
+        // 检查项目是否需要校验
         val projectsNeedToCheck = redisOperation.get(PROJECT_NEED_TO_CHECK)?.split(",") ?: emptyList()
         if (!projectsNeedToCheck.contains(projectId)) {
             return UserSignatureStatusResponse(
@@ -62,19 +62,6 @@ class ProjectSignatureManageService(
             )
         }
         logger.info("get signature status :$projectId|$userId")
-        // 若不为项目成员，直接返回异常
-        val hasPermission = authProjectApi.isProjectUser(
-            user = userId,
-            serviceCode = projectAuthServiceCode,
-            projectCode = projectId,
-            group = null
-        )
-        if (!hasPermission) {
-            throw ErrorCodeException(
-                errorCode = ProjectMessageCode.USER_NOT_PROJECT_USER,
-                params = arrayOf(userId, projectId)
-            )
-        }
         try {
             val projectNames = projectService.list(projectsNeedToCheck).map { it.projectName }
             val isUserSigned = redisOperation.get(USER_SIGNATURE_STATUS_CHECK.plus(userId))

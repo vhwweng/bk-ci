@@ -34,13 +34,15 @@ import com.tencent.devops.auth.pojo.UserPermissionInfo
 import com.tencent.devops.common.auth.api.AuthPermission
 import com.tencent.devops.common.auth.api.AuthResourceType
 import com.tencent.devops.common.client.Client
+import com.tencent.devops.common.redis.RedisOperation
 import com.tencent.devops.project.api.service.ServiceProjectResource
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import java.util.concurrent.TimeUnit
 
 class ManagerService @Autowired constructor(
-    val client: Client
+    val client: Client,
+    val redisOperation: RedisOperation
 ) {
     private val userPermissionMap = CacheBuilder.newBuilder()
         .maximumSize(50000)
@@ -61,6 +63,12 @@ class ManagerService @Autowired constructor(
     ): Boolean {
 
         logger.info("isManagerPermission $userId| $projectId| ${resourceType.value} | ${authPermission.value}")
+        val projectsOfSignature = redisOperation.get(PROJECTS_OF_SIGNATURE)?.split(",") ?: emptyList()
+        // 需要签订保密协议的项目，不允许reporter及超管访问
+        if (projectsOfSignature.contains(projectId)) {
+            return false
+        }
+
         // 从缓存内获取用户管理员信息，若缓存击穿，调用auth服务获取源数据，并刷入内存
         val manageInfo = if (userPermissionMap.getIfPresent(userId) == null) {
             val remoteManagerInfo = client.get(ServiceManagerUserResource::class).getManagerInfo(userId)
@@ -151,5 +159,6 @@ class ManagerService @Autowired constructor(
 
     companion object {
         val logger = LoggerFactory.getLogger(ManagerService::class.java)
+        private const val PROJECTS_OF_SIGNATURE = "projects.signature.check"
     }
 }
