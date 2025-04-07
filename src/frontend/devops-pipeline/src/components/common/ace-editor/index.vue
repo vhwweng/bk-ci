@@ -226,21 +226,21 @@
 
             async initCopilotMonaco () {
                 const [monaco, { GongfengMonacoEditor, ReleaseChannel }, accessToken] = await Promise.all([
-                import(
-                    /* webpackMode: "lazy" */
-                    /* webpackPrefetch: true */
-                    /* webpackPreload: true */
-                    /* webpackChunkName: "monaco-editor" */
-                    'monaco-editor'
-                ),
-                import(
-                    /* webpackMode: "lazy" */
-                    /* webpackPrefetch: true */
-                    /* webpackPreload: true */
-                    /* webpackChunkName: "monaco-editor" */
-                    '@tencent/gongfeng-copilot-monaco'
-                ),
-                this.getAccessToken(false)
+                    import(
+                        /* webpackMode: "lazy" */
+                        /* webpackPrefetch: true */
+                        /* webpackPreload: true */
+                        /* webpackChunkName: "monaco-editor" */
+                        'monaco-editor'
+                    ),
+                    import(
+                        /* webpackMode: "lazy" */
+                        /* webpackPrefetch: true */
+                        /* webpackPreload: true */
+                        /* webpackChunkName: "monaco-editor" */
+                        '@tencent/gongfeng-copilot-monaco'
+                    ),
+                    this.getAccessToken(false)
                 ])
                 this.monaco = monaco
                 this.gongfengEditor = new GongfengMonacoEditor(this.monaco, {
