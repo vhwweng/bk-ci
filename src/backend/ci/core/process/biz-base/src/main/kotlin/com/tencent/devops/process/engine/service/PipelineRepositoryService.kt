@@ -2304,4 +2304,12 @@ class PipelineRepositoryService constructor(
             }
         )
     }
+
+    fun getReleaseVersionRecord(projectId: String, pipelineId: String): PipelineResourceVersion? {
+        return pipelineResourceVersionDao.getReleaseVersionRecord(
+            dslContext = dslContext,
+            projectId = projectId,
+            pipelineId = pipelineId
+        )
+    }
 }
