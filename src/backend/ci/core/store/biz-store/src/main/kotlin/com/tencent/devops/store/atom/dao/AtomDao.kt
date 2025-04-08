@@ -100,11 +100,16 @@ import org.jooq.Result
 import org.jooq.SelectOnConditionStep
 import org.jooq.impl.DSL
 import org.jooq.impl.DSL.countDistinct
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Repository
 
 @Suppress("ALL")
 @Repository
 class AtomDao : AtomBaseDao() {
+
+    companion object {
+        val logger = LoggerFactory.getLogger(AtomDao::class.java)
+    }
 
     fun addAtomFromOp(
         dslContext: DSLContext,
@@ -662,6 +667,7 @@ class AtomDao : AtomBaseDao() {
         }
         val t = queryAtomStep.asTable("t")
         val baseStep = dslContext.select().from(t).orderBy(t.field(KEY_WEIGHT)!!.desc(), t.field(NAME)!!.asc())
+        logger.info("queryAtomStep: ${baseStep.sql}")
         return if (null != page && null != pageSize) {
             baseStep.limit((page - 1) * pageSize, pageSize).skipCheck().fetch()
         } else {
@@ -1463,5 +1469,20 @@ class AtomDao : AtomBaseDao() {
             .orderBy(ta.CREATE_TIME, ta.ID)
         if (offset != null && limit != null) sql.offset(offset).limit(limit)
         return sql.skipCheck().fetch()
+    }
+
+    fun countAtom(dslContext: DSLContext): Long {
+        with(TAtom.T_ATOM) {
+            return dslContext.selectCount().from(this).where(ATOM_STATUS.eq(AtomStatusEnum.RELEASED.status.toByte()))
+                .fetchOne(0, Long::class.java)!!
+        }
+    }
+
+    fun selectAtomIds(dslContext: DSLContext, offset: Long, batchSize: Long): Result<Record1<String>>? {
+        with(TAtom.T_ATOM) {
+            return dslContext.select(ID).from(this).where(ATOM_STATUS.eq(AtomStatusEnum.RELEASED.status.toByte()))
+                .limit(offset, batchSize)
+                .fetch()
+        }
     }
 }

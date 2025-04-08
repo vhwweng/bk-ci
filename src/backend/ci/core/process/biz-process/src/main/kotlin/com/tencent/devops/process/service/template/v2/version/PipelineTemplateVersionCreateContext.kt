@@ -40,8 +40,11 @@ import io.swagger.v3.oas.annotations.media.Schema
  */
 @Schema(title = "模版版本创建上下文")
 data class PipelineTemplateVersionCreateContext(
+    @get:Schema(title = "用户ID", required = true)
     val userId: String,
+    @get:Schema(title = "项目ID", required = true)
     val projectId: String,
+    @get:Schema(title = "模版ID", required = true)
     val templateId: String,
     @get:Schema(title = "模版版本,发布时才有值", required = true)
     val version: Long? = null,

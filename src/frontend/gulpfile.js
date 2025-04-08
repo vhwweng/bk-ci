@@ -2,13 +2,13 @@ const { src, dest, parallel, series, task } = require('gulp')
 const fetch = require('node-fetch')
 const chalk = require('chalk')
 const fs = require('fs')
+const { globSync } = require('glob')
 const path = require('path')
 const htmlmin = require('gulp-html-minifier-terser')
 const svgSprite = require('gulp-svg-sprite')
 const inject = require('gulp-inject')
 const rename = require('gulp-rename')
 const hash = require('gulp-hash')
-const { globSync } = require('glob')
 const replace = require('gulp-replace')
 const Ora = require('ora')
 const yargs = require('yargs')
@@ -19,24 +19,19 @@ const argv = yargs.alias({
     env: 'e',
     lsVersion: 'l',
     type: 't',
-    scope: 's',
-    effect: 'effect'
+    scope: 's'
 }).default({
     dist: 'frontend',
     env: 'master',
     lsVersion: 'v2',
-    type: 'tencent',
-    effect: true
+    type: 'tencent'
 }).describe({
     dist: 'build output dist directory',
     env: 'environment [dev, test, master, external]',
     lsVersion: 'localStorage version',
-    head: 'head file path',
-    base: 'base file path',
-    effect: 'only buuild effected service'
+    type: 'bkdevops version 【ee | tencent】'
 }).argv
-const { dist, env, lsVersion, scope, head = 'HEAD', base = 'master', effect } = argv
-console.log(env, head, base)
+const { dist, env, lsVersion, scope } = argv
 
 const svgSpriteConfig = {
     mode: {
@@ -44,29 +39,48 @@ const svgSpriteConfig = {
     }
 }
 
-const envPrefix = ['dev', 'test'].indexOf(env) > -1 ? `${env}.` : ''
+const envPrefix = ['dev', 'test'].indexOf(env) > -1 ? `${env}-` : ''
 const BUNDLE_NAME = 'assets_bundle.json'
-const FINAL_ASSETS_JSON_FILENAME = `${dist}/assetsBundles.js`
 const ASSETS_JSON_URL = `https://${envPrefix}devnet.devops.woa.com/${BUNDLE_NAME}`
-const gateWayTagMap = {
-    dev: 'dev-rbac',
-    test: 'test-rbac',
-    stream: '',
-    'stream-gray': ''
-}
+const FINAL_ASSETS_JSON_FILENAME = `${dist}/assetsBundles.js`
 
-async function getAssetsJSON (jsonUrl) {
+async function generateAssetsJSON (jsonUrl) {
     try {
         const res = await fetch(jsonUrl, {
-            headers: {
-                'X-GATEWAY-TAG': gateWayTagMap[env] ?? env
-            }
+            headers: ['dev', 'test', 'stream', 'stream-gray'].includes(env)
+                ? {}
+                : {
+                    'X-GATEWAY-TAG': env
+                }
         })
         const assets = await res.json()
 
         console.log(chalk.blue.bold(`Successfully get assets json from ${jsonUrl}!`))
         console.table(assets)
-        return assets
+        const entryDir = path.join(__dirname, dist, "entry's")
+        fs.writeFileSync(path.join(__dirname, dist, BUNDLE_NAME), JSON.stringify(assets))
+        // 读取path.join(__dirname, dist, 'entry's', '*.json')所有Json合并成一个
+        const finalAssets = globSync(path.join(entryDir, '*.json')).reduce((acc, file) => {
+            const content = JSON.parse(fs.readFileSync(file, 'utf-8'))
+            acc = {
+                ...acc,
+                ...content
+            }
+            return acc
+        }, assets)
+    
+        console.log(chalk.greenBright.bold('final assets json!'))
+        console.table(finalAssets)
+        const fileContent = `window.SERVICE_ASSETS = ${JSON.stringify(finalAssets)}`
+        fs.writeFileSync(path.join(__dirname, dist, BUNDLE_NAME), JSON.stringify(finalAssets))
+        
+        fs.writeFileSync(FINAL_ASSETS_JSON_FILENAME, fileContent)
+        if (fs.existsSync(entryDir)) {
+            fs.rmSync(entryDir, {
+                recursive: true,
+                force: true
+            })
+        }
     } catch (error) {
         console.log(chalk.yellow.bgRed.bold(`Failed get assets json from ${jsonUrl}!`))
         process.exit(1)
@@ -126,36 +140,13 @@ task('devops', series([taskGenerator('devops'), renameSvg('devops'), generatorSv
 task('pipeline', series([taskGenerator('pipeline'), renameSvg('pipeline'), generatorSvgJs('pipeline')]))
 task('copy', () => src(['common-lib/**'], { base: '.' }).pipe(dest(`${dist}/`)))
 
-task('build', async () => {
-    return await execAsync()
+task('build', execAsync)
+
+task('generate-assets-json', async () => {
+    return await generateAssetsJSON(ASSETS_JSON_URL)
 })
 
-task('generate-assets-json', () => {
-    const entryDir = path.join(__dirname, dist, "entry's")
-    const assetsBundlesName = path.join(__dirname, dist, BUNDLE_NAME)
-    const prevAssets = JSON.parse(fs.readFileSync(assetsBundlesName, 'utf-8'))
-    // 读取path.join(__dirname, dist, 'entry's', '*.json')所有Json合并成一个
-    const finalAssets = globSync(path.join(entryDir, '*.json')).reduce((acc, file) => {
-        const content = JSON.parse(fs.readFileSync(file, 'utf-8'))
-        acc = {
-            ...acc,
-            ...content
-        }
-        return acc
-    }, prevAssets)
-
-    console.log('final assets json!')
-    console.table(finalAssets)
-    const fileContent = `window.SERVICE_ASSETS = ${JSON.stringify(finalAssets)}`
-    
-    fs.writeFileSync(FINAL_ASSETS_JSON_FILENAME, fileContent)
-    fs.writeFileSync(path.join(__dirname, dist, BUNDLE_NAME), JSON.stringify(finalAssets))
-    if (fs.existsSync(entryDir)) {
-        fs.rmSync(entryDir, {
-            recursive: true,
-            force: true
-        })
-    }
+task('hash-asset-bundle-json', () => {
     return src(FINAL_ASSETS_JSON_FILENAME).pipe(hash()).pipe(dest(dist))
 })
 
@@ -163,12 +154,14 @@ task('inject-asset', parallel(['console', 'pipeline'].map(prefix => {
     const dir = path.join(dist, prefix)
     const spriteNameGlob = `${prefix === 'console' ? 'devops' : 'pipeline'}_sprite-*.js`
     const fileName = `frontend#${prefix}#index.html`
+    
     return () => src(path.join(dir, fileName), { allowEmpty: true })
         .pipe(inject(src([
             ...(prefix === 'console' ? [`${dist}/assetsBundles-*.js`] : []),
             `${dist}/svg-sprites/${spriteNameGlob}`
         ], {
-            read: false
+            read: false,
+            allowEmpty: false
         }), {
             ignorePath: dist,
             addRootSlash: false,
@@ -180,15 +173,14 @@ task('inject-asset', parallel(['console', 'pipeline'].map(prefix => {
             minifyJS: true
         }))
         .pipe(dest(dir))
-}
-)))
+})))
 
 async function execAsync () {
     const spinner = new Ora('building bk-ci frontend project').start()
     
     return new Promise((resolve, reject) => {
         const scopeStr = getScopeStr(scope)
-        const cmd = effect ? 'affected -t public:master' : `run-many -t public:master ${scopeStr}`
+        const cmd = 'run-many -t public:master'
         console.log('gulp cmd: ', cmd, cmd.split(' '))
         const { spawn } = require('node:child_process')
         const spawnCmd = spawn('pnpm', [
@@ -205,7 +197,7 @@ async function execAsync () {
             }
         })
         
-        spawnCmd.on('close', async (code) => {
+        spawnCmd.on('close', (code) => {
             console.log(`child process exited with code ${code}`)
             if (code) {
                 spinner.fail('Failed to build bk-ci frontend project')
@@ -213,11 +205,9 @@ async function execAsync () {
                 process.exit(1)
             }
             spinner.succeed('Finished building bk-ci frontend project')
-            const assetJson = await getAssetsJSON(ASSETS_JSON_URL)
-            fs.writeFileSync(path.join(__dirname, dist, BUNDLE_NAME), JSON.stringify(assetJson))
             resolve()
         })
     })
 }
   
-exports.default = series('clean', parallel('devops', 'pipeline', 'copy', 'build'), 'generate-assets-json', 'inject-asset')
+exports.default = series('clean', parallel('devops', 'pipeline', 'copy', 'build'), 'generate-assets-json', 'hash-asset-bundle-json', 'inject-asset')

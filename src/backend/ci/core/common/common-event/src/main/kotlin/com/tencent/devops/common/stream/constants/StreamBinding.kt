@@ -147,6 +147,9 @@ object StreamBinding {
     // P4代码仓库webhook请求回调
     const val REPLAY_BUILD_REQUEST_EVENT = "engine.pipeline.hook.replay.event"
 
+    // scm webhook请求回调
+    const val SCM_HOOK_BUILD_REQUEST_EVENT = "engine.pipeline.hook.scm.event"
+
     // webSocket消息
     const val WEBSOCKET_TMP_FANOUT = "websocket.fanout"
     const val WEBSOCKET_SESSION_CLEAR = "websocket.session.clear.fanout"
@@ -202,6 +205,9 @@ object StreamBinding {
     // 权限资源关联用户组修改事件
     const val AUTH_RESOURCE_GROUP_MODIFY = "auth.resource.group.modify"
 
+    // 权限项目级权限变更同步事件
+    const val AUTH_PROJECT_LEVEL_GROUP_PERMISSIONS_SYNC = "auth.project.level.group.permissions.sync"
+
     // 数据库分片
     const val SHARDING_ROUTING_RULE_FANOUT = "sharding.routing.rule.exchange.fanout"
 
@@ -211,4 +217,5 @@ object StreamBinding {
     const val PIPELINE_YAML_LISTENER_ENABLE = "pipeline.yaml.listener.enable"
     const val PIPELINE_YAML_LISTENER_DISABLE = "pipeline.yaml.listener.disable"
     const val PIPELINE_YAML_LISTENER_TRIGGER = "pipeline.yaml.listener.trigger"
+    const val PIPELINE_YAML_LISTENER_FILE = "pipeline.yaml.listener.file"
 }
