@@ -688,6 +688,7 @@ class PipelineTemplateInstanceFacadeService @Autowired constructor(
             pipelineVersionManager.deployPipeline(
                 userId = creator,
                 projectId = projectId,
+                pipelineId = pipelineId,
                 request = instanceCreateReq
             )
             templateInstanceItemDao.updateStatus(
