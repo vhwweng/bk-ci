@@ -1755,5 +1755,6 @@
   "pipelineTemplate": "流水线模板",
   "allSource": "全部",
   "customSource": "自定义",
-  "marketSource": "研发商店"
+  "marketSource": "研发商店",
+  "relyChanged": "依赖字段（{0}）值已变更，请检查配置是否正确"
 }
