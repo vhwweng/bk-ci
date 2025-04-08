@@ -252,7 +252,9 @@ export default {
         }
     },
     fetchPipelineByVersion ({ commit }, { projectId, pipelineId, version }) {
-        return request.get(`${PROCESS_API_URL_PREFIX}/user/version/projects/${projectId}/pipelines/${pipelineId}/versions/${version ?? ''}`)
+        return request.get(`${PROCESS_API_URL_PREFIX}/user/version/projects/${projectId}/pipelines/${pipelineId}/versions/${version ?? ''}`).then(res => {
+            return res.data
+        })
     },
     fetchTemplateByVersion ({ commit }, { projectId, templateId, version }) {
         return request.get(`${PROCESS_API_URL_PREFIX}/user/pipeline/template/v2/${projectId}/${templateId}/${version}/details/`).then(res => {
