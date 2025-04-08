@@ -233,6 +233,14 @@ class PipelineWebhookService @Autowired constructor(
                         )
                     }
 
+                ScmType.SCM_GIT -> {
+                    scmProxyService.addScmGitWebhook(
+                        projectId = projectId,
+                        repositoryConfig = repositoryConfig,
+                        codeEventType = codeEventType
+                    )
+                }
+
                 else -> {
                     null
                 }
