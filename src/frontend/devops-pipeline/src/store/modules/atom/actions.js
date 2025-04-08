@@ -264,6 +264,11 @@ export default {
             return res.data
         })
     },
+    fetchTemplateByVersion ({ commit }, { projectId, templateId, version }) {
+        return request.get(`${PROCESS_API_URL_PREFIX}/user/pipeline/template/v2/${projectId}/${templateId}/${version}/details/`).then(res => {
+            return res.data
+        })
+    },
     async canSwitchToYaml (_, { projectId, pipelineId, actionType, ...params }) {
         try {
             const { data } = await request.post(`${PROCESS_API_URL_PREFIX}/user/transfer/projects/${projectId}`, params, {
@@ -1002,7 +1007,9 @@ export default {
         return request.post(`/${PROCESS_API_URL_PREFIX}/user/version/projects/${projectId}/saveDraft`, draftPipeline)
     },
     saveDraftTemplate (_, { projectId, templateId, ...draftTemplate }) {
-        return request.put(`/${PROCESS_API_URL_PREFIX}/user/pipeline/template/v2/${projectId}/${templateId}/saveDraft`, draftTemplate)
+        return request.put(`/${PROCESS_API_URL_PREFIX}/user/pipeline/template/v2/${projectId}/saveDraft`, draftTemplate, {
+            params: templateId ? { templateId } : {}
+        })
     },
     releaseDraftPipeline (_, { projectId, pipelineId, version, params }) {
         return request.post(`/${PROCESS_API_URL_PREFIX}/user/version/projects/${projectId}/pipelines/${pipelineId}/releaseVersion/${version}`, params)
