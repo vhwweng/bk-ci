@@ -27,8 +27,6 @@
 
 package com.tencent.devops.repository.api.scm
 
-import com.tencent.devops.common.api.auth.AUTH_HEADER_USER_ID
-import com.tencent.devops.common.api.auth.AUTH_HEADER_USER_ID_DEFAULT_VALUE
 import com.tencent.devops.common.api.pojo.Result
 import com.tencent.devops.repository.pojo.Repository
 import com.tencent.devops.repository.pojo.credential.AuthRepository
@@ -38,8 +36,6 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.ws.rs.Consumes
-import jakarta.ws.rs.GET
-import jakarta.ws.rs.HeaderParam
 import jakarta.ws.rs.POST
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.PathParam
@@ -79,7 +75,7 @@ interface ServiceScmRepositoryApiResource {
     ): Result<Perm>
 
     @Operation(summary = "注册webhook")
-    @GET
+    @POST
     @Path("/registerWebhook")
     fun registerWebhook(
         @Parameter(description = "项目ID", required = true)
