@@ -43,9 +43,12 @@ import org.springframework.beans.factory.annotation.Autowired
 import java.util.concurrent.TimeUnit
 
 class ManagerService @Autowired constructor(
-    val client: Client,
-    val redisOperation: RedisOperation
+    val client: Client
 ) {
+
+    @Autowired
+    private lateinit var redisOperation: RedisOperation
+
     private val userPermissionMap = CacheBuilder.newBuilder()
         .maximumSize(50000)
         .expireAfterWrite(5, TimeUnit.MINUTES)
@@ -68,7 +71,7 @@ class ManagerService @Autowired constructor(
         // 未签署保密合同的用户不允许访问
         if (projectsOfSignature.contains(projectId)) {
             val isUserSigned = redisOperation.get(USER_SIGNATURE_STATUS_CHECK.plus(userId))?.toBoolean()
-            if (isUserSigned == false) {
+            if (isUserSigned != true) {
                 logger.warn(
                     "The user cannot access the project because the " +
                         "contract has not been signed.$projectId|$userId"
@@ -128,12 +131,12 @@ class ManagerService @Autowired constructor(
             manageInfo.keys.forEach orgForEach@{ orgId ->
                 val managerPermission = manageInfo[orgId] ?: return@orgForEach
                 val isOrgEqual =
-                when (managerPermission.organizationLevel) {
-                    1 -> projectOrgInfo!!.bgId == managerPermission.organizationId.toString()
-                    2 -> projectOrgInfo!!.deptId == managerPermission.organizationId.toString()
-                    3 -> projectOrgInfo!!.centerId == managerPermission.organizationId.toString()
-                    else -> false
-                }
+                    when (managerPermission.organizationLevel) {
+                        1 -> projectOrgInfo!!.bgId == managerPermission.organizationId.toString()
+                        2 -> projectOrgInfo!!.deptId == managerPermission.organizationId.toString()
+                        3 -> projectOrgInfo!!.centerId == managerPermission.organizationId.toString()
+                        else -> false
+                    }
                 if (!isOrgEqual) {
                     // 组织信息未匹配
                     return@orgForEach
@@ -152,7 +155,7 @@ class ManagerService @Autowired constructor(
                         if (orgManagerPermissionList.contains(authPermission)) {
                             logger.info(
                                 "$userId has $projectId ${resourceType.value} ${authPermission.value} " +
-                                        "$projectOrgInfo manager permission"
+                                    "$projectOrgInfo manager permission"
                             )
                             isManagerPermission = true
                             return@managerPermissionFor
