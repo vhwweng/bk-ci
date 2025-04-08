@@ -465,6 +465,11 @@
     "editStoreTemplateTips": "研发商店模板不支持编辑",
     "lastModifiedDate": "更新时间",
     "lastModifiedBy": "更新人",
+    "templateType": "模板类型",
+    "pipelineTemplate": "流水线模板",
+    "stageTemplate": "Stage模板",
+    "jobTemplate": "Job模板",
+    "stepTemplate": "Step模板",
     "templateCoverWarning": "草稿即将覆盖警告",
     "templateCoverWarningDesc": "{0} 编辑的草稿（从{2}创建）尚未发布。编辑分支版本将覆盖尚未发布的草稿，请确认是否继续",
     "templateOutDateCoverWarningDesc": "已从代码库提交了新的 {2} 分支版本， {0} 编辑的草稿（于 {1} 从 {2} 创建）已过期，此操作将覆盖过期的草稿，请确认是否继续"
