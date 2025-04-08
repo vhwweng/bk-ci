@@ -259,16 +259,6 @@ export default {
             return res.data
         })
     },
-    fetchTemplateByVersion ({ commit }, { projectId, templateId, version }) {
-        return request.get(`${PROCESS_API_URL_PREFIX}/user/pipeline/template/v2/${projectId}/${templateId}/${version}/details/`).then(res => {
-            return res.data
-        })
-    },
-    fetchTemplateByVersion ({ commit }, { projectId, templateId, version }) {
-        return request.get(`${PROCESS_API_URL_PREFIX}/user/pipeline/template/v2/${projectId}/${templateId}/${version}/details/`).then(res => {
-            return res.data
-        })
-    },
     async canSwitchToYaml (_, { projectId, pipelineId, actionType, ...params }) {
         try {
             const { data } = await request.post(`${PROCESS_API_URL_PREFIX}/user/transfer/projects/${projectId}`, params, {

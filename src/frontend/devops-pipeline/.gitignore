@@ -16,3 +16,8 @@ commitInfo.js
 *.ntvs*
 *.njsproj
 *.sln
+
+
+
+.nx/cache
+.nx/workspace-data
