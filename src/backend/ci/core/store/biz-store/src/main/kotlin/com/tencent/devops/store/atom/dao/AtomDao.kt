@@ -100,11 +100,16 @@ import org.jooq.Result
 import org.jooq.SelectOnConditionStep
 import org.jooq.impl.DSL
 import org.jooq.impl.DSL.countDistinct
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Repository
 
 @Suppress("ALL")
 @Repository
 class AtomDao : AtomBaseDao() {
+
+    companion object {
+        val logger = LoggerFactory.getLogger(AtomDao::class.java)
+    }
 
     fun addAtomFromOp(
         dslContext: DSLContext,
@@ -662,6 +667,7 @@ class AtomDao : AtomBaseDao() {
         }
         val t = queryAtomStep.asTable("t")
         val baseStep = dslContext.select().from(t).orderBy(t.field(KEY_WEIGHT)!!.desc(), t.field(NAME)!!.asc())
+        logger.info("queryAtomStep: ${baseStep.sql}")
         return if (null != page && null != pageSize) {
             baseStep.limit((page - 1) * pageSize, pageSize).skipCheck().fetch()
         } else {
