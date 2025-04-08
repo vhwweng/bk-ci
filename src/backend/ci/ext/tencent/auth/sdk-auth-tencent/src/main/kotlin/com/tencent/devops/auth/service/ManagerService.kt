@@ -67,18 +67,6 @@ class ManagerService @Autowired constructor(
         authPermission: AuthPermission
     ): Boolean {
         logger.info("isManagerPermission $userId| $projectId| ${resourceType.value} | ${authPermission.value}")
-        val projectsOfSignature = redisOperation.get(PROJECTS_OF_SIGNATURE)?.split(",") ?: emptyList()
-        // 未签署保密合同的用户不允许访问
-        if (projectsOfSignature.contains(projectId)) {
-            val isUserSigned = redisOperation.get(USER_SIGNATURE_STATUS_CHECK.plus(userId))?.toBoolean()
-            if (isUserSigned != true) {
-                logger.warn(
-                    "The user cannot access the project because the " +
-                        "contract has not been signed.$projectId|$userId"
-                )
-                throw ErrorCodeException(errorCode = ERROR_USER_CONTRACT_NOT_SIGNED)
-            }
-        }
         // 从缓存内获取用户管理员信息，若缓存击穿，调用auth服务获取源数据，并刷入内存
         val manageInfo = if (userPermissionMap.getIfPresent(userId) == null) {
             val remoteManagerInfo = client.get(ServiceManagerUserResource::class).getManagerInfo(userId)
@@ -165,6 +153,23 @@ class ManagerService @Autowired constructor(
             }
         }
         return isManagerPermission
+    }
+
+    fun checkUserSignatureStatus(
+        projectId: String,
+        userId: String
+    ) {
+        val projectsOfSignature = redisOperation.get(PROJECTS_OF_SIGNATURE)?.split(",") ?: emptyList()
+        // 未签署保密合同的用户不允许访问
+        if (projectsOfSignature.contains(projectId)) {
+            val isUserSigned = redisOperation.get(USER_SIGNATURE_STATUS_CHECK.plus(userId))?.toBoolean()
+            if (isUserSigned != true) {
+                logger.warn(
+                    "The user cannot access the project because the contract has not been signed.$projectId|$userId"
+                )
+                throw ErrorCodeException(errorCode = ERROR_USER_CONTRACT_NOT_SIGNED)
+            }
+        }
     }
 
     companion object {
