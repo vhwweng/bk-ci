@@ -247,7 +247,7 @@ object ExportJob {
             return null
         }
         return Strategy(
-            matrix = matrixControlOption.convertMatrixToYamlConfig() ?: return null,
+            matrix = matrixControlOption.convertMatrixToYamlStrategy() ?: return null,
             fastKill = matrixControlOption.fastKill,
             maxParallel = matrixControlOption.maxConcurrency
         )

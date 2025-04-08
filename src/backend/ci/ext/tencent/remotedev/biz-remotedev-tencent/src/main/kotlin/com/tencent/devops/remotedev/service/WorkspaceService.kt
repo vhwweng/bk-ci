@@ -1231,7 +1231,7 @@ class WorkspaceService @Autowired constructor(
 
         return WorkspaceStartCloudDetail(
             ip = workspace.hostIp ?: "",
-            curLaunchId = workspace.curLaunchId ?: gameId.second.toInt(),
+            curLaunchId = 980008,// workspace.curLaunchId ?: gameId.second.toInt(),
             regionId = workspace.regionId,
             projectId = workspace.projectId,
             name = workspace.workspaceName,

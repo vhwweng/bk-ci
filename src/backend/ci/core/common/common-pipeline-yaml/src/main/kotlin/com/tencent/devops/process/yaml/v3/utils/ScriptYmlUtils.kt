@@ -383,25 +383,25 @@ object ScriptYmlUtils {
                         )
                     }
 
-            jobs.add(
-                Job(
-                    enable = preJob.enable,
-                    id = index,
-                    name = preJob.name,
-                    mutex = preJob.mutex,
-                    runsOn = formatRunsOn(preJob.runsOn),
-                    showRunsOn = preJob.showRunsOn,
-                    services = services,
-                    ifField = formatIfField(preJob.ifField),
-                    ifModify = preJob.ifModify,
-                    steps = preStepsToSteps(index, preJob.steps, transferData),
-                    timeoutMinutes = preJob.timeoutMinutes,
-                    env = preJob.env,
-                    continueOnError = preJob.continueOnError,
-                    strategy = preJob.strategy,
-                    dependOn = preJob.dependOn
-                )
-            )
+                    jobs.add(
+                        Job(
+                            enable = preJob.enable,
+                            id = index,
+                            name = preJob.name,
+                            mutex = preJob.mutex,
+                            runsOn = formatRunsOn(preJob.runsOn),
+                            showRunsOn = preJob.showRunsOn,
+                            services = services,
+                            ifField = formatIfField(preJob.ifField),
+                            ifModify = preJob.ifModify,
+                            steps = preStepsToSteps(index, preJob.steps, transferData),
+                            timeoutMinutes = preJob.timeoutMinutes,
+                            env = preJob.env,
+                            continueOnError = preJob.continueOnError,
+                            strategy = preJob.strategy,
+                            dependOn = preJob.dependOn
+                        )
+                    )
 
                     // 为每个job增加可能的模板信息
                     transferData?.add(

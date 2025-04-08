@@ -78,10 +78,14 @@ class PipelineTemplateMigrateService(
             )
             logger.info("templates->{}", templateIds)
             templateIds.forEach { templateId ->
-                migrateTemplate(
-                    templateId = templateId,
-                    projectId = projectId
-                )
+                try {
+                    migrateTemplate(
+                        templateId = templateId,
+                        projectId = projectId
+                    )
+                } catch (ex: Exception) {
+                    logger.warn("migrate template failed $projectId|$templateId|$ex")
+                }
             }
 
             offset += limit
@@ -118,7 +122,10 @@ class PipelineTemplateMigrateService(
 
         templateVersionInfos.forEachIndexed { index, templateVersionInfo ->
             versionSequence += 1
-            val currentSetting = setting.copy(version = versionSequence)
+            val currentSetting = setting.copy(
+                version = versionSequence,
+                creator = templateVersionInfo.creator
+            )
             // 当前实际模板，可能为当前模板的版本或父模板版本
             val currentProjectId = srcTemplateProjectId ?: projectId
             val currentTemplate = templateDao.getTemplate(
@@ -177,7 +184,12 @@ class PipelineTemplateMigrateService(
                 )
             } catch (ex: Exception) {
                 logger.warn("model Transfer failed:{}", ex.toString())
-                throw ex
+                PTemplateModelTransferResult(
+                    templateType = PipelineTemplateType.PIPELINE,
+                    templateModel = currentTemplateModel,
+                    templateSetting = currentSetting,
+                    yamlWithVersion = null
+                )
             }
 
             val pipelineTemplateResource = createPipelineTemplateResource(

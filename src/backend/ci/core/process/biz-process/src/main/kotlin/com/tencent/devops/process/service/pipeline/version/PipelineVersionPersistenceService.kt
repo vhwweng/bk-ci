@@ -118,14 +118,14 @@ class PipelineVersionPersistenceService @Autowired constructor(
                 userId = userId,
                 pipelineResourceVersion = pipelineResourceVersion
             )
-            pipelineSettingDao.saveSetting(
-                dslContext = transactionContext,
-                setting = pipelineSetting
-            )
             createPipelineResourceVersion(
                 transactionContext = transactionContext,
                 userId = userId,
                 pipelineResourceVersion = pipelineResourceVersion
+            )
+            pipelineSettingDao.saveSetting(
+                dslContext = transactionContext,
+                setting = pipelineSetting
             )
             createPipelineSettingVersion(
                 transactionContext = transactionContext,
@@ -187,6 +187,10 @@ class PipelineVersionPersistenceService @Autowired constructor(
                 transactionContext = transactionContext,
                 userId = userId,
                 pipelineResourceVersion = pipelineResourceVersion
+            )
+            pipelineSettingDao.saveSetting(
+                dslContext = transactionContext,
+                setting = pipelineSetting
             )
             createPipelineSettingVersion(
                 transactionContext = transactionContext,
@@ -323,8 +327,8 @@ class PipelineVersionPersistenceService @Autowired constructor(
                 pipelineId = pipelineId,
                 userId = userId,
                 version = version,
-                pipelineName = null,
-                pipelineDesc = null,
+                pipelineName = pipelineName,
+                pipelineDesc = pipelineDesc,
                 manualStartup = pipelineModelData.canManualStartup,
                 canElementSkip = pipelineModelData.canElementSkip,
                 taskCount = pipelineModelData.taskCount,

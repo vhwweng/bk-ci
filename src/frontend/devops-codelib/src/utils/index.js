@@ -25,7 +25,7 @@ import {
     isTGit,
     regionList,
     isScmGit,
-    isScmSvn,
+    isScmSvn
 } from '../config'
 
 export function parsePathAlias (type, path, authType, svnType) {

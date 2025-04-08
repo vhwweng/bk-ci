@@ -763,7 +763,7 @@
                     }).catch((err) => this.$showTips({ theme: 'error', message: err.message || err })).finally(() => (this.isLoadingImage = false))
                 }
             }
-            
+
             if (this.buildImageCode) {
                 this.getVersionList(this.buildImageCode)
             }

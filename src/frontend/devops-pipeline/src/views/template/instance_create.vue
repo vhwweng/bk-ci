@@ -201,21 +201,6 @@
                                 </pipeline-params-form>
                             </div>
                         </section>
-                        <section
-                            class="params-item"
-                            v-if="templateParamList.length"
-                        >
-                            <div class="info-title"><span>{{ currentPipelineParams.pipelineName }}</span>：{{ $t('template.templateConst') }}</div>
-                            <div class="pipeline-params-content template-params-content">
-                                <pipeline-params-form
-                                    :disabled="true"
-                                    :ref="`paramsForm${index}`"
-                                    :param-values="templateParamValues"
-                                    :params="templateParamList"
-                                >
-                                </pipeline-params-form>
-                            </div>
-                        </section>
                     </template>
                 </section>
             </div>
@@ -272,17 +257,17 @@
 </template>
 
 <script>
-    import Logo from '@/components/Logo'
-    import PipelineVersionsForm from '@/components/PipelineVersionsForm.vue'
-    import innerHeader from '@/components/devops/inner_header'
-    import PipelineParamsForm from '@/components/pipelineParamsForm.vue'
-    import instanceMessage from '@/components/template/instance-message.vue'
-    import instancePipelineName from '@/components/template/instance-pipeline-name.vue'
     import AlertTips from '@/components/AlertTips.vue'
-    import { allVersionKeyList } from '@/utils/pipelineConst'
-    import { mapGetters } from 'vuex'
-    import { getParamsValuesMap, isObject } from '@/utils/util'
-    import { isFileParam } from '@/store/modules/atom/paramsConfig'
+import Logo from '@/components/Logo'
+import PipelineVersionsForm from '@/components/PipelineVersionsForm.vue'
+import innerHeader from '@/components/devops/inner_header'
+import PipelineParamsForm from '@/components/pipelineParamsForm.vue'
+import instanceMessage from '@/components/template/instance-message.vue'
+import instancePipelineName from '@/components/template/instance-pipeline-name.vue'
+import { isFileParam } from '@/store/modules/atom/paramsConfig'
+import { allVersionKeyList } from '@/utils/pipelineConst'
+import { getParamsValuesMap, isObject } from '@/utils/util'
+import { mapGetters } from 'vuex'
 
     export default {
         components: {
@@ -302,7 +287,6 @@
                 showInstanceCreate: false,
                 showInstanceMessage: false,
                 paramList: [],
-                templateParamList: [],
                 versionList: [],
                 pipelineNameList: [],
                 currentPipelineParams: [],
@@ -319,7 +303,6 @@
                 template: {},
                 buildParams: {},
                 paramValues: {},
-                templateParamValues: {},
                 showUpdateDialog: false,
                 displayName: '',
                 resetInstanceName: []
@@ -444,8 +427,6 @@
             handleParams (stages) {
                 this.paramList = stages[0].containers[0].params || []
                 this.paramValues = getParamsValuesMap(this.paramList)
-                this.templateParamList = stages[0].containers[0].templateParams || []
-                this.templateParamValues = getParamsValuesMap(this.templateParamList)
                 if (stages[0].containers[0].buildNo) {
                     this.buildParams = stages[0].containers[0].buildNo
                 } else {
@@ -732,7 +713,7 @@
                         return
                     }
                     const isRequired = params.some(item => item.buildNo && (typeof item.buildNo.buildNo === 'undefined' || item.buildNo.buildNo === ''))
-                 
+
                     if (isRequired) {
                         this.$showTips({
                             message: this.$t('template.buildNumErrTips'),
@@ -741,7 +722,7 @@
                         return
                     }
                     this.resetInstanceName = params.filter(item => item.resetBuildNo).map(item => item.pipelineName)
-  
+
                     if (this.resetInstanceName.length) {
                         this.$bkInfo({
                             width: 600,
