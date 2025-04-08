@@ -71,7 +71,7 @@ class ManagerService @Autowired constructor(
         // 未签署保密合同的用户不允许访问
         if (projectsOfSignature.contains(projectId)) {
             val isUserSigned = redisOperation.get(USER_SIGNATURE_STATUS_CHECK.plus(userId))?.toBoolean()
-            if (isUserSigned == false) {
+            if (isUserSigned != true) {
                 logger.warn(
                     "The user cannot access the project because the " +
                         "contract has not been signed.$projectId|$userId"
