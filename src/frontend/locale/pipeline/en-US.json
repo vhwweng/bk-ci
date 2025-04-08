@@ -1756,5 +1756,6 @@
   "pipelineTemplate": "Pipeline",
   "allSource": "All",
   "customSource": "Custom",
-  "marketSource": "Store"
+  "marketSource": "Store",
+  "relyChanged": "Dependent field ({0}) values have changed, please check if the configuration is correct"
 }

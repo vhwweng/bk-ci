@@ -1,13 +1,16 @@
 <template>
     <bk-dialog
+        confirm-loading
         :value="isShow"
         :title="$t('disclosureAgreement')"
         header-position="left"
         :width="720"
         :mask-close="false"
-        @cancel="toggleSignDialog(false)"
-        @confirm="refresh"
+        :show-close="false"
+        :loading="refreshing"
+        :confirm-fn="refresh"
         :ok-text="$t(okText, [sec])"
+        @cancel="toggleSignDialog(false)"
     >
         <bk-alert
             type="warning"
@@ -63,6 +66,7 @@
             const okText = computed(() => signed.value ? 'countdownFresh' : '刷新')
             const isShow = computed(() => store.state.isShowNonDisclosureAgreement)
             const sec = ref(3)
+            const refreshing = ref(false)
             const vm = getCurrentInstance()
             let timer = null
 
@@ -106,8 +110,20 @@
                     store.dispatch('toggleSignatureDialog', show)
                     store.state.cancelDisclosureHandler?.()
                 },
-                refresh () {
-                    store.dispatch('fetchSignatureStatus', { projectId: vm.proxy.$route.params.projectId })
+                async refresh () {
+                    try {
+                        const projectId = vm.proxy.$route.params.projectId ?? window.GLOBAL_PID
+                        if (!projectId) {
+                            console.error('Project ID is not available')
+                            return
+                        }
+                        refreshing.value = true
+                        await store.dispatch('fetchSignatureStatus', { projectId })
+                    } catch (error) {
+                        console.error('Error refreshing signature status:', error)
+                    } finally {
+                        refreshing.value = false
+                    }
                 }
             }
         }
@@ -153,7 +169,7 @@
                 height: 120px;
                 top: 10px;
                 left: 10px;
-                background-color: rgba(255, 255, 255, 0.9);
+                background-color: rgba(255, 255, 255, 0.8);
                 display: flex;
                 align-items: center;
                 justify-content: center;
