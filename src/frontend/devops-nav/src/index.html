@@ -551,12 +551,12 @@
         printError(e.status)
       })
 
-    function printError(status) {
+    function printError(status, message) {
       const locale = getCookie('blueking_language')
-      const msg =
-        locale === 'en'
+      const msg = message ||
+        (locale === 'en'
           ? 'Oops! Looks like something went wrong'
-          : '后端服务异常，请稍后重试'
+          : '后端服务异常，请稍后重试')
       document.writeln(
         '<div style="height: 100%; width: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column;">' +
         '<img src="<%= PUBLIC_PATH_PREFIX %>/console/static/' +
