@@ -29,8 +29,10 @@ package com.tencent.devops.auth.service
 
 import com.google.common.cache.CacheBuilder
 import com.tencent.devops.auth.api.manager.ServiceManagerUserResource
+import com.tencent.devops.auth.constant.AuthMessageCode.ERROR_USER_CONTRACT_NOT_SIGNED
 import com.tencent.devops.auth.pojo.ProjectOrgInfo
 import com.tencent.devops.auth.pojo.UserPermissionInfo
+import com.tencent.devops.common.api.exception.ErrorCodeException
 import com.tencent.devops.common.auth.api.AuthPermission
 import com.tencent.devops.common.auth.api.AuthResourceType
 import com.tencent.devops.common.client.Client
@@ -61,14 +63,19 @@ class ManagerService @Autowired constructor(
         resourceType: AuthResourceType,
         authPermission: AuthPermission
     ): Boolean {
-
         logger.info("isManagerPermission $userId| $projectId| ${resourceType.value} | ${authPermission.value}")
         val projectsOfSignature = redisOperation.get(PROJECTS_OF_SIGNATURE)?.split(",") ?: emptyList()
-        // 需要签订保密协议的项目，不允许reporter及超管访问
+        // 未签署保密合同的用户不允许访问
         if (projectsOfSignature.contains(projectId)) {
-            return false
+            val isUserSigned = redisOperation.get(USER_SIGNATURE_STATUS_CHECK.plus(userId))?.toBoolean()
+            if (isUserSigned == false) {
+                logger.warn(
+                    "The user cannot access the project because the " +
+                        "contract has not been signed.$projectId|$userId"
+                )
+                throw ErrorCodeException(errorCode = ERROR_USER_CONTRACT_NOT_SIGNED)
+            }
         }
-
         // 从缓存内获取用户管理员信息，若缓存击穿，调用auth服务获取源数据，并刷入内存
         val manageInfo = if (userPermissionMap.getIfPresent(userId) == null) {
             val remoteManagerInfo = client.get(ServiceManagerUserResource::class).getManagerInfo(userId)
@@ -160,5 +167,6 @@ class ManagerService @Autowired constructor(
     companion object {
         val logger = LoggerFactory.getLogger(ManagerService::class.java)
         private const val PROJECTS_OF_SIGNATURE = "projects.signature.check"
+        private const val USER_SIGNATURE_STATUS_CHECK = "user.signature.status.check."
     }
 }
