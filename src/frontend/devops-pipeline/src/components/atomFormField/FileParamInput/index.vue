@@ -9,36 +9,29 @@
             <vuex-input
                 class="path-input"
                 :disabled="disabled"
-                :handle-change="updatePath"
-                name="directory"
+                :handle-change="(name, value) => updatePathFromDirectory(value)"
+                name="path"
                 v-validate="{ required: required }"
                 :data-vv-scope="'pipelineParam'"
                 :click-unfold="true"
                 :placeholder="$t('editPage.filePathTips')"
-                :value="directory"
+                :value="fileDefaultVal.directory"
                 :class="{
                     'is-diff-param': isDiffParam
                 }"
             />
-            <span
-                v-if="enableVersionControl"
-                :class="['random-generate', randomSubPath ? '' : 'placeholder']"
-            >
-                /{{ randomSubPath || $t('editPage.randomlyGenerate') }}/
-            </span>
             <vuex-input
                 class="file-name"
                 :disabled="disabled"
-                :handle-change="updatePath"
+                :handle-change="(name, value) => updatePathFromFileName(value)"
                 name="fileName"
                 v-validate="{ required: required }"
                 :data-vv-scope="'pipelineParam'"
                 :click-unfold="true"
                 :placeholder="$t('editPage.fileNameTips')"
-                :value="fileName"
+                :value="fileDefaultVal.fileName"
                 :class="{
-                    'is-diff-param': isDiffParam,
-                    'border-left-none': !enableVersionControl
+                    'is-diff-param': isDiffParam
                 }"
             />
         </div>
@@ -57,30 +50,15 @@
             <file-upload
                 name="fileName"
                 :file-path="value"
-                @handle-change="uploadPathFromFileName"
+                @handle-change="(value) => uploadPathFromFileName(value)"
             />
-        </div>
-        <div v-if="!flex">
-            <bk-checkbox
-                :value="enableVersionControl"
-                @change="handleEnableVersionControl"
-            >
-                {{ $t('editPage.enableVersionControl') }}
-            </bk-checkbox>
-            <i
-                class="bk-icon icon-info-circle"
-                style="color: #63656e;"
-                v-bk-tooltips="{ content: $t('editPage.versionControlTip'), placement: 'bottom-start' }"
-            ></i>
         </div>
     </section>
 </template>
 
 <script>
-    import FileUpload from '@/components/atomFormField/FileUpload'
     import VuexInput from '@/components/atomFormField/VuexInput'
-    import { randomString } from '@/utils/util'
-
+    import FileUpload from '@/components/atomFormField/FileUpload'
     export default {
         components: {
             VuexInput,
@@ -115,77 +93,47 @@
             flex: {
                 type: Boolean,
                 default: false
-            },
-            enableVersionControl: {
-                type: Boolean,
-                default: false
-            },
-            randomSubPath: {
-                type: String,
-                default: ''
             }
         },
         data () {
             return {
-                directory: '',
-                fileName: ''
+                fileDefaultVal: {
+                    directory: '',
+                    fileName: ''
+                },
+                uploadFileName: ''
             }
         },
         watch: {
+            uploadFileName (val) {
+                this.updatePathFromFileName(val)
+            },
             value: {
-                handler: function (newValue) {
-                    const currentValue = newValue.directory ?? newValue
-                    const lastSlashIndex = currentValue?.lastIndexOf('/')
-                    
-                    this.fileName = currentValue.slice(lastSlashIndex + 1)
-
-                    if (this.enableVersionControl && this.randomSubPath) {
-                        const randomStringLastIndex = currentValue.lastIndexOf(`/${this.randomSubPath}`)
-                        this.directory = currentValue.slice(0, randomStringLastIndex)
-                    } else {
-                        this.directory = currentValue.slice(0, lastSlashIndex)
-                    }
+                handler () {
+                    this.splitFilePath()
                 },
                 immediate: true
             }
         },
         methods: {
-            updatePath (name, value, newFile = false) {
-                this[name] = value
-                let randomFilePath = this.enableVersionControl ? this.randomSubPath : ''
-
-                if (newFile && this.enableVersionControl) {
-                    randomFilePath = randomString(8)
-                }
-
-                const path = [
-                    this.directory,
-                    ...(randomFilePath ? [randomFilePath] : []),
-                    this.fileName
-                ].join('/')
-
-                // 执行页面需要传json给后端去改变latestRandomStringInPath的值
-                const finalValue = this.flex && this.enableVersionControl
-                    ? {
-                        directory: path,
-                        latestRandomStringInPath: randomFilePath
-                    }
-                    : path
-                this.handleChange(this.name, finalValue)
-
-                if (!this.flex) {
-                    this.handleChange('randomStringInPath', randomFilePath)
-                }
+            splitFilePath () {
+                const lastSlashIndex = this.value.lastIndexOf('/')
+                this.fileDefaultVal.directory = this.value.substr(0, lastSlashIndex)
+                this.fileDefaultVal.fileName = this.value.substr(lastSlashIndex + 1)
+            },
+            updatePathFromDirectory (value) {
+                this.fileDefaultVal.directory = value
+                const val = `${this.fileDefaultVal.directory}/${this.fileDefaultVal.fileName}`
+                this.handleChange(this.name, val)
+            },
+            updatePathFromFileName (value) {
+                this.fileDefaultVal.fileName = value
+                const val = `${this.fileDefaultVal.directory}/${this.fileDefaultVal.fileName}`
+                this.handleChange(this.name, val)
             },
             uploadPathFromFileName (value) {
-                if (!this.fileName) {
-                    this.fileName = value
-                }
-                this.updatePath('fileName', this.fileName, true)
-            },
-            handleEnableVersionControl (value) {
-                this.handleChange('enableVersionControl', value)
-                this.updatePath('enableVersionControl', value)
+                if (this.fileDefaultVal.fileName) return
+                this.uploadFileName = value
             }
         }
     }
@@ -194,9 +142,6 @@
 <style lang="scss" scoped>
     .file-param {
         width: 100%;
-    }
-    .display-flex {
-        display: flex;
     }
     .flex-column {
         display: flex;
@@ -213,26 +158,15 @@
             }
         }
     }
-    .border-left-none {
-        border-left: none;
-    }
     .file-input {
         width: 100%;
         display: flex;
         .path-input {
             border-radius: 2px 0 0 2px;
         }
-        .random-generate {
-            font-size: 12px;
-            color: #737987;
-            flex-shrink: 0;
-            padding: 0 10px;
-        }
-        .placeholder {
-            color: #c4c6cc;
-        }
         .file-name {
             border-radius: 0 2px 2px 0;
+            border-left: 0;
         }
     }
     .is-diff-param {

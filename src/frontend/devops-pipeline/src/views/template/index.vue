@@ -1,140 +1,46 @@
 <template>
-    <div
-        class="biz-container pipeline-subpages"
-        v-bkloading="{ isLoading }"
+    <bk-resize-layout
+        ref="resizeLayout"
+        class="template-group-section"
+        collapsible
+        :min="280"
+        :max="400"
+        :initial-divide="initialDivide"
+        @collapse-change="handleCollapseChange"
+        @after-resize="afterResize"
     >
-        <div class="biz-side-bar">
-            <side-bar
-                :nav="nav"
-                :side-menu-list="sideMenuList"
-                :sub-system-name="'pipelines'"
-            >
-            </side-bar>
-        </div>
-        <template v-if="!isLoading">
-            <router-view
-                v-if="hasViewPermission"
-                class="biz-content"
-                :is-enabled-permission="isEnabledPermission"
-            >
-            </router-view>
-            <empty-tips
-                v-else
-                :title="$t('template.accessDeny.title')"
-                :desc="$t('template.accessDeny.desc')"
-                show-lock
-            >
-                <bk-button
-                    theme="primary"
-                    @click="handleApply"
-                >
-                    {{ $t('template.accessDeny.apply') }}
-                </bk-button>
-            </empty-tips>
-        </template>
-    </div>
+        <TemplateGroupAside slot="aside" />
+        <router-view slot="main" />
+    </bk-resize-layout>
 </template>
 
-<script>
-    import { handleTemplateNoPermission, TEMPLATE_RESOURCE_ACTION } from '@/utils/permission'
-    import sideBar from '@/components/devops/side-nav'
-    import emptyTips from '@/components/template/empty-tips'
+<script setup>
+    import { onMounted, ref } from 'vue'
+    import TemplateGroupAside from './TemplateGroupAside'
+    import {
+        PIPELINE_ASIDE_PANEL_TOGGLE,
+        PIPELINE_GROUP_ASIDE_WIDTH_CACHE
+    } from '@/store/constants'
 
-    export default {
-        components: {
-            'side-bar': sideBar,
-            emptyTips
-        },
-
-        data () {
-            return {
-                isLoading: true,
-                isEnabledPermission: false,
-                hasViewPermission: true,
-                sideMenuList: [
-                    {
-                        list: [
-                            {
-                                id: 'templateEdit',
-                                name: this.$t('edit'),
-                                icon: 'icon-edit'
-                            },
-                            {
-                                id: 'templateSetting',
-                                name: this.$t('template.settings'),
-                                icon: 'icon-cog'
-                            },
-                            {
-                                id: 'templateInstance',
-                                name: this.$t('template.instanceManage'),
-                                icon: 'icon-list',
-                                isSelected: false,
-                                showChildren: false,
-                                children: [
-                                    {
-                                        id: 'createInstance',
-                                        name: this.$t('template.addInstance'),
-                                        icon: 'icon-list'
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                ],
-                nav: {
-                    backUrl: 'pipelinesTemplate',
-                    title: this.$t('templateManage'),
-                    icon: ''
-                }
-            }
-        },
-
-        created () {
-            this.$updateTabTitle?.()
-            const { projectId, templateId } = this.$route.params
-            this.$store.dispatch('requestProjectDetail', { projectId })
-            this.$store.dispatch('pipelines/enableTemplatePermissionManage', projectId).then((res) => {
-                if (res.data) {
-                    this.isEnabledPermission = res.data
-                    this.sideMenuList[0].list.push({
-                        id: 'templatePermission',
-                        name: this.$t('template.permissionSetting'),
-                        icon: 'permission'
-                    })
-                }
-            })
-            this.$store.dispatch('pipelines/getTemplateHasViewPermission', {
-                projectId,
-                templateId
-            }).then(async res => {
-                this.hasViewPermission = res.data
-                if (!this.hasViewPermission) await this.handleApply()
-            }).finally(() => {
-                this.isLoading = false
-            })
-        },
-        methods: {
-            handleApply () {
-                const { projectId, templateId } = this.$route.params
-                handleTemplateNoPermission({
-                    projectId,
-                    resourceCode: templateId,
-                    action: TEMPLATE_RESOURCE_ACTION.VIEW
-                })
-            }
-        }
+    const initialDivide = ref(Number(localStorage.getItem(PIPELINE_GROUP_ASIDE_WIDTH_CACHE)) || 280)
+    function handleCollapseChange (val) {
+        localStorage.setItem(PIPELINE_ASIDE_PANEL_TOGGLE, JSON.stringify(val))
     }
+
+    function afterResize (width) {
+        localStorage.setItem(PIPELINE_GROUP_ASIDE_WIDTH_CACHE, JSON.stringify(width))
+    }
+    
+    onMounted(() => {
+        if (localStorage.getItem(PIPELINE_ASIDE_PANEL_TOGGLE) === 'true') {
+            this.$refs.resizeLayout.setCollapse(true)
+        }
+    })
 </script>
-
 <style lang="scss">
-    .pipeline-subpages {
-        min-height: 100%;
-    }
-    .biz-content {
-        width: 100%;
-        height: 100%;
-        .group-table {
-            padding: 20px;
-        }
+    .template-group-section {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
     }
 </style>

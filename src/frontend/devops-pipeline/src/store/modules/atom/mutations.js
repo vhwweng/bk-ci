@@ -63,6 +63,7 @@ import {
     SET_HIDE_SKIP_EXEC_TASK,
     SET_INSERT_STAGE_STATE,
     SET_PIPELINE,
+    SET_TEMPLATE_TYPE,
     SET_PIPELINE_EDITING,
     SET_PIPELINE_EXEC_DETAIL,
     SET_PIPELINE_INFO,
@@ -162,6 +163,11 @@ export default {
             return state
         }
         Object.assign(state.pipeline, pipeline)
+    },
+    [SET_TEMPLATE_TYPE]: (state, templateType) => {
+        return Object.assign(state, {
+            templateType
+        })
     },
     [SET_PIPELINE_WITHOUT_TRIGGER]: (state, pipeline = null) => {
         Vue.set(state, 'pipelineWithoutTrigger', pipeline)

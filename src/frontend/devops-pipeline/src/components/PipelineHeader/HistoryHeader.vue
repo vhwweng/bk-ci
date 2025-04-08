@@ -60,7 +60,6 @@
                 :is-active-draft="activePipelineVersion?.isDraft"
                 :is-active-branch-version="isActiveBranchVersion"
                 :draft-creator="activePipelineVersion?.creator"
-                :draft-create-time="activePipelineVersion?.createTime"
             >
                 {{ operateName }}
             </RollbackEntry>
@@ -219,7 +218,7 @@
                         disabled: true
                     }
                     : {
-                        content: this.$t(this.isCurPipelineLocked ? 'pipelineLockTips' : !(this.isReleasePipeline || this.onlyBranchPipeline) ? 'draftPipelineExecTips' : 'pipelineManualDisable'),
+                        content: this.$t(!this.isReleasePipeline ? 'draftPipelineExecTips' : this.isCurPipelineLocked ? 'pipelineLockTips' : 'pipelineManualDisable'),
                         delay: [300, 0]
                     }
             }

@@ -116,7 +116,6 @@
                                 :is-active-draft="props.row.isDraft"
                                 :is-active-branch-version="props.row.isBranchVersion"
                                 :draft-creator="props.row?.creator"
-                                :draft-create-time="props.row?.createTime"
                             />
                             <version-diff-entry
                                 v-if="props.row.version !== releaseVersion"
@@ -175,7 +174,8 @@
         computed: {
             ...mapState('atom', ['pipelineInfo']),
             ...mapGetters({
-                draftBaseVersionName: 'atom/getDraftBaseVersionName'
+                draftBaseVersionName: 'atom/getDraftBaseVersionName',
+                isTemplate: 'atom/isTemplate'
             }),
             releaseVersion () {
                 return this.pipelineInfo?.releaseVersion
@@ -254,6 +254,7 @@
             ...mapActions({
                 requestPipelineSummary: 'atom/requestPipelineSummary',
                 requestPipelineVersionList: 'pipelines/requestPipelineVersionList',
+                requestTemplateVersionList: 'pipelines/requestTemplateVersionList',
                 deletePipelineVersion: 'pipelines/deletePipelineVersion'
             }),
             handleShown () {
@@ -286,12 +287,14 @@
                 })
             },
             async getPipelineVersions (page) {
-                const { projectId, pipelineId } = this.$route.params
-                const res = await this.requestPipelineVersionList({
+                const { projectId, pipelineId, templateId } = this.$route.params
+                const dataSource = this.isTemplate ? this.requestTemplateVersionList : this.requestPipelineVersionList
+                const param = this.isTemplate ? { templateId } : { pipelineId }
+                const res = await dataSource({
                     projectId,
-                    pipelineId,
                     page,
                     pageSize: this.pagination.limit,
+                    ...param,
                     ...this.filterQuery
                 })
                 Object.assign(this.pagination, {
