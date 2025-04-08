@@ -53,7 +53,10 @@ class AuthAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    fun managerService(client: Client) = ManagerService(client)
+    fun managerService(
+        client: Client,
+        redisOperation: RedisOperation
+    ) = ManagerService(client, redisOperation)
 
     @Bean
     fun jmxAuthApi(mBeanExporter: MBeanExporter) = JmxAuthApi(mBeanExporter)
