@@ -508,7 +508,10 @@
     "currentVision": "Current Version",
     "codeRepo": "Code Repository",
     "updateInstance": "Upgrade",
-    "handleMR": "Handle MR"
+    "handleMR": "Handle MR",
+    "editTemplate": "Edit Template",
+    "instanceList": "Instance list",
+    "templateConfig": "Template config"
   },
   "newlist": {
     "exportYamlTip": "PreCI is a set of solutions provided by Blue Shield DevOps for developers' pre-CI R&D activities, which can detect problems as early as possible before submitting code and improve code quality. Including IDE plug-ins and command line tools.",
