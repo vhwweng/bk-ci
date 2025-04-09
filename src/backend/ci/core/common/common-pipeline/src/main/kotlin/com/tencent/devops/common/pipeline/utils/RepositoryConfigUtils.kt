@@ -42,6 +42,7 @@ import com.tencent.devops.common.pipeline.pojo.element.trigger.CodeGithubWebHook
 import com.tencent.devops.common.pipeline.pojo.element.trigger.CodeGitlabWebHookTriggerElement
 import com.tencent.devops.common.pipeline.pojo.element.trigger.CodeP4WebHookTriggerElement
 import com.tencent.devops.common.pipeline.pojo.element.trigger.CodeSVNWebHookTriggerElement
+import com.tencent.devops.common.pipeline.pojo.element.trigger.CodeScmGitWebHookTriggerElement
 import com.tencent.devops.common.pipeline.pojo.element.trigger.CodeTGitWebHookTriggerElement
 import com.tencent.devops.common.pipeline.pojo.element.trigger.enums.CodeEventType
 
@@ -220,6 +221,16 @@ object RepositoryConfigUtils {
                     selfRepoHashId = variables[PIPELINE_PAC_REPO_HASH_ID]
                 )
                 Triple(ScmType.CODE_P4, element.data.input.eventType, repositoryConfig)
+            }
+
+            is CodeScmGitWebHookTriggerElement -> {
+                val repositoryConfig = RepositoryConfig(
+                    repositoryHashId = element.repositoryHashId,
+                    repositoryName = EnvUtils.parseEnv(element.repositoryName, variables),
+                    triggerRepositoryType = element.repositoryType,
+                    selfRepoHashId = null
+                )
+                Triple(ScmType.SCM_GIT, element.eventType, repositoryConfig)
             }
 
             else ->

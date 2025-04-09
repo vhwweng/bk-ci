@@ -429,9 +429,11 @@
     } from 'vuex'
     import {
         isGit,
-        isGitLab,
         isGithub,
+        isGitLab,
         isP4,
+        isScmGit,
+        isScmSvn,
         isSvn,
         isTGit,
         isScmGit,
