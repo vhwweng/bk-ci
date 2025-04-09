@@ -265,7 +265,7 @@ class ScmRepositoryApiService @Autowired constructor(
 
             ScmType.SCM_GIT -> {
                 //:TODO 临时占位
-                ""
+                "https://dev-api.bkdevops.qq.com/process/api/external/scm/codeGitee/commit"
             }
 
             else -> {
