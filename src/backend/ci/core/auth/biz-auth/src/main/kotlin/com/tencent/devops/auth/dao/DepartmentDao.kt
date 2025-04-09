@@ -31,7 +31,11 @@ class DepartmentDao {
                 departmentInfo.parent,
                 departmentInfo.level,
                 departmentInfo.hasChildren
-            ).onDuplicateKeyIgnore()
+            ).onDuplicateKeyUpdate()
+                .set(DEPARTMENT_NAME, departmentInfo.departmentName)
+                .set(PARENT, departmentInfo.parent)
+                .set(LEVEL, departmentInfo.level)
+                .set(HAS_CHILDREN, departmentInfo.hasChildren)
                 .execute()
         }
     }

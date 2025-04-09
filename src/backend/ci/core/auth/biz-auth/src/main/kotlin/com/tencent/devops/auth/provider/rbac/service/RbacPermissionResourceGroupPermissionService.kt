@@ -691,65 +691,35 @@ class RbacPermissionResourceGroupPermissionService(
         return true
     }
 
-    private fun buildUserProjectPermission(
-        projectCode: String,
-        resourceType: String,
-        iamGroupId: Int
-    ): List<UserProjectPermission> {
-        val userProjectPermissions = mutableListOf<UserProjectPermission>()
-        if (resourceType == ResourceTypeId.PROJECT) {
-            val actions = resourceGroupPermissionDao.getProjectLevelPermission(
-                dslContext = dslContext,
-                projectCode = projectCode,
-                iamGroupId = iamGroupId
-            )
-            if (actions.isEmpty()) {
-                return emptyList()
-            }
-            val members = authResourceMemberDao.listResourceGroupMember(
-                dslContext = dslContext,
-                projectCode = projectCode,
-                resourceType = ResourceTypeId.PROJECT,
-                iamGroupId = iamGroupId,
-                minExpiredTime = LocalDateTime.now()
-            )
+    private fun buildUserProjectPermission(projectCode: String, iamGroupId: Int): List<UserProjectPermission> {
+        val actions = resourceGroupPermissionDao.getProjectLevelPermission(
+            dslContext = dslContext,
+            projectCode = projectCode,
+            iamGroupId = iamGroupId
+        ).filter { needToSyncProjectLevelAction.contains(it) }
 
-            actions.forEach { action ->
-                if (!needToSyncProjectLevelAction.contains(action)) {
-                    return@forEach
-                }
-                members.forEach { member ->
-                    userProjectPermissions.add(
-                        UserProjectPermission(
-                            memberId = member.memberId,
-                            projectCode = projectCode,
-                            action = action,
-                            iamGroupId = iamGroupId,
-                            expireTime = member.expiredTime
-                        )
-                    )
-                }
-            }
-        } else {
-            val otherGroupMembers = authResourceMemberDao.listResourceGroupMember(
-                dslContext = dslContext,
-                projectCode = projectCode,
-                iamGroupId = iamGroupId,
-                minExpiredTime = LocalDateTime.now()
-            )
-            otherGroupMembers.forEach {
-                userProjectPermissions.add(
-                    UserProjectPermission(
-                        memberId = it.memberId,
-                        projectCode = it.projectCode,
-                        action = ActionId.PROJECT_VISIT,
-                        iamGroupId = it.iamGroupId,
-                        expireTime = it.expiredTime
-                    )
+        if (actions.isEmpty()) {
+            return emptyList()
+        }
+
+        val members = authResourceMemberDao.listResourceGroupMember(
+            dslContext = dslContext,
+            projectCode = projectCode,
+            iamGroupId = iamGroupId,
+            minExpiredTime = LocalDateTime.now()
+        )
+
+        return members.flatMap { member ->
+            actions.map { action ->
+                UserProjectPermission(
+                    memberId = member.memberId,
+                    projectCode = projectCode,
+                    action = action,
+                    iamGroupId = iamGroupId,
+                    expireTime = member.expiredTime
                 )
             }
         }
-        return userProjectPermissions
     }
 
     override fun syncProjectLevelPermissions(
@@ -781,7 +751,6 @@ class RbacPermissionResourceGroupPermissionService(
             )
             val lastedRecords = buildUserProjectPermission(
                 projectCode = projectCode,
-                resourceType = authResourceGroup.resourceType,
                 iamGroupId = iamGroupId
             )
 
