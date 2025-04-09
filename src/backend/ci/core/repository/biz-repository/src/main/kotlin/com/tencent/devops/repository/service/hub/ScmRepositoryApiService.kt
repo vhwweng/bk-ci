@@ -263,6 +263,11 @@ class ScmRepositoryApiService @Autowired constructor(
                 p4Config.p4HookUrl
             }
 
+            ScmType.SCM_GIT -> {
+                //:TODO 临时占位
+                ""
+            }
+
             else -> {
                 webhookUrl
             }
