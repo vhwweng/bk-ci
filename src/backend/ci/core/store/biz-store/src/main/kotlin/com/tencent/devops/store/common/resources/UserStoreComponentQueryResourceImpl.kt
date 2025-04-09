@@ -47,6 +47,7 @@ import com.tencent.devops.store.pojo.common.test.StoreTestItem
 import com.tencent.devops.store.pojo.common.version.StoreDeskVersionItem
 import com.tencent.devops.store.pojo.common.version.StoreShowVersionInfo
 import com.tencent.devops.store.pojo.common.version.StoreVersionLogInfo
+import com.tencent.devops.store.pojo.common.version.VersionInfo
 import org.springframework.beans.factory.annotation.Autowired
 
 @RestResource
@@ -232,6 +233,24 @@ class UserStoreComponentQueryResourceImpl @Autowired constructor(
             storeType = storeType,
             page = page,
             pageSize = pageSize
+        )
+    }
+
+    override fun getStoreUpgradeVersionInfo(
+        userId: String,
+        storeType: String,
+        storeCode: String,
+        projectCode: String?,
+        instanceId: String?
+    ): Result<VersionInfo?> {
+        return Result(
+            storeComponentQueryService.getComponentUpgradeVersionInfo(
+                userId = userId,
+                storeCode = storeCode,
+                storeType = storeType,
+                projectCode = projectCode ?: "",
+                instanceId = instanceId
+            )
         )
     }
 }
