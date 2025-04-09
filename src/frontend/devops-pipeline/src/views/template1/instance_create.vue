@@ -258,16 +258,15 @@
 
 <script>
     import AlertTips from '@/components/AlertTips.vue'
-import Logo from '@/components/Logo'
-import PipelineVersionsForm from '@/components/PipelineVersionsForm.vue'
-import innerHeader from '@/components/devops/inner_header'
-import PipelineParamsForm from '@/components/pipelineParamsForm.vue'
-import instanceMessage from '@/components/template/instance-message.vue'
-import instancePipelineName from '@/components/template/instance-pipeline-name.vue'
-import { isFileParam } from '@/store/modules/atom/paramsConfig'
-import { allVersionKeyList } from '@/utils/pipelineConst'
-import { getParamsValuesMap, isObject } from '@/utils/util'
-import { mapGetters } from 'vuex'
+    import Logo from '@/components/Logo'
+    import PipelineVersionsForm from '@/components/PipelineVersionsForm.vue'
+    import innerHeader from '@/components/devops/inner_header'
+    import PipelineParamsForm from '@/components/pipelineParamsForm.vue'
+    import instanceMessage from '@/components/template/instance-message.vue'
+    import instancePipelineName from '@/components/template/instance-pipeline-name.vue'
+    import { allVersionKeyList } from '@/utils/pipelineConst'
+    import { getParamsValuesMap, isObject } from '@/utils/util'
+    import { mapGetters } from 'vuex'
 
     export default {
         components: {
@@ -518,12 +517,7 @@ import { mapGetters } from 'vuex'
                         item.paramValues[name] = value
                         item.params.forEach((i) => {
                             if (i.id === name) {
-                                if (isFileParam(i.type) && typeof value === 'object') {
-                                    i.defaultValue = value.directory
-                                    i.randomStringInPath = value.latestRandomStringInPath
-                                } else {
-                                    i.defaultValue = value
-                                }
+                                i.defaultValue = value
                             }
                         })
                     }

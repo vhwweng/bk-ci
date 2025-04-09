@@ -124,7 +124,9 @@ class PipelineTemplateMigrateService(
             versionSequence += 1
             val currentSetting = setting.copy(
                 version = versionSequence,
-                creator = templateVersionInfo.creator
+                creator = templateVersionInfo.creator,
+                createdTime = latestTemplate.createdTime.timestampmilli(),
+                updateTime = latestTemplate.updateTime.timestampmilli()
             )
             // 当前实际模板，可能为当前模板的版本或父模板版本
             val currentProjectId = srcTemplateProjectId ?: projectId
@@ -286,7 +288,9 @@ class PipelineTemplateMigrateService(
             sortWeight = 0,
             creator = latestTemplate.creator,
             updater = latestTemplate.creator,
-            releaseTime = currentTemplate.createdTime.timestampmilli()
+            releaseTime = (currentTemplate.updateTime ?: currentTemplate.createdTime).timestampmilli(),
+            createdTime = currentTemplate.createdTime.timestampmilli(),
+            updateTime = currentTemplate.updateTime.timestampmilli(),
         )
     }
 
@@ -300,9 +304,10 @@ class PipelineTemplateMigrateService(
         val instanceSize = templatePipelineDao.countByVersionFeat(
             dslContext = dslContext,
             projectId = latestTemplate.projectId,
-            templateId = latestTemplate.template,
-            instanceType = "CONSTRAINT"
+            templateId = latestTemplate.id,
+            instanceType = TemplateType.CONSTRAINT.name
         )
+        logger.info("template instance count {}|{}|{}", latestTemplate.projectId, latestTemplate.id, instanceSize)
         val isConstraint = latestTemplate.type == TemplateType.CONSTRAINT.name
         val strategy = if (isConstraint) UpgradeStrategyEnum.AUTO else null
         return PipelineTemplateInfo(

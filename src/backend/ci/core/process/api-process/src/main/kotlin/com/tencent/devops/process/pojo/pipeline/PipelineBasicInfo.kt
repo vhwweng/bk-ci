@@ -36,8 +36,6 @@ data class PipelineBasicInfo(
     val projectId: String,
     @get:Schema(title = "流水线DI")
     val pipelineId: String,
-    @get:Schema(title = "模板ID")
-    val templateId: String?,
     @get:Schema(title = "流水线名称")
     val pipelineName: String,
     @get:Schema(title = "流水线描述")

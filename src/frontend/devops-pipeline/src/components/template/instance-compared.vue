@@ -49,7 +49,7 @@
                             </bk-select>
                         </div>
                     </div>
-                    <section v-if="curParamsList.length || targetParamsList.length || curTplParamsList.length || targetTplParamsList.length">
+                    <section v-if="curParamsList?.length || targetParamsList?.length || curTplParamsList?.length || targetTplParamsList?.length">
                         <div class="update-version-compared compared-title">
                             <div class="update-before">{{ $t('var') }}</div>
                         </div>
@@ -61,7 +61,7 @@
                                 ></key-value-normal>
                                 <div
                                     class="cut-line"
-                                    v-if="curTplParamsList.length"
+                                    v-if="curTplParamsList?.length"
                                 ></div>
                                 <key-value-normal
                                     :value="curTplParamsList"
@@ -75,7 +75,7 @@
                                 ></key-value-normal>
                                 <div
                                     class="cut-line"
-                                    v-if="targetTplParamsList.length"
+                                    v-if="targetTplParamsList?.length"
                                 ></div>
                                 <key-value-normal
                                     :value="targetTplParamsList"

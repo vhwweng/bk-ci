@@ -21,13 +21,11 @@
                     flex
                     v-bind="Object.assign({}, param, { id: undefined, name: 'devops' + param.name })"
                     :class="{
-                        'is-diff-param': highlightChangedParam && param.isChanged
+                        'is-diff-param': (highlightChangedParam && param.isChanged) || param.affectedChanged
                     }"
                     :disabled="disabled"
                     :placeholder="param.placeholder"
                     :is-diff-param="highlightChangedParam && param.isChanged"
-                    :enable-version-control="param.enableVersionControl"
-                    :random-sub-path="param.latestRandomStringInPath"
                 />
                 <span
                     class="meta-data"
@@ -42,11 +40,17 @@
                 </span>
             </section>
             <span
-                v-if="!errors.has('devops' + param.name)"
+                v-if="!errors.has('devops' + param.name) && param.desc"
                 :class="['preview-params-desc', param.type === 'TEXTAREA' ? 'params-desc-styles' : '']"
                 :title="param.desc"
             >
                 {{ param.desc }}
+            </span>
+            <span
+                v-if="param.affectTips"
+                class="preview-params-desc affect-warning"
+            >
+                {{ param.affectTips }}
             </span>
         </form-field>
     </bk-form>
@@ -89,7 +93,7 @@
         SVN_TAG,
         TEXTAREA
     } from '@/store/modules/atom/paramsConfig'
-    import { isObject } from '@/utils/util'
+    import { isObject, isShallowEqual } from '@/utils/util'
 
     export default {
 
@@ -123,6 +127,11 @@
             },
             highlightChangedParam: Boolean
         },
+        data () {
+            return {
+                prevAffectedValues: {}
+            }
+        },
         computed: {
             paramList () {
                 return this.params.map(param => {
@@ -130,13 +139,20 @@
                     if (param.type !== STRING || param.type !== TEXTAREA) {
                         if (isRemoteType(param)) {
                             const val = (param.type === 'MULTIPLE' && typeof this.paramValues?.[param.id] === 'string') ? this.paramValues[param.id].split(',').filter(i => i !== '') : this.paramValues?.[param.id]
+                            const affected = this.getAffectedBy(param.payload.url)
+                            const affectedChanged = this.detectChanged(this.prevAffectedValues?.[param.id], affected)
+                            this.prevAffectedValues[param.id] = affected
+
                             restParam = {
                                 ...restParam,
                                 ...param.payload,
                                 multiSelect: param.type === 'MULTIPLE',
                                 value: param.type === 'MULTIPLE' && !Array.isArray(val) ? [] : val,
                                 allIdString: true,
-                                paramValues: this.paramValues
+                                paramValues: this.paramValues,
+                                affected,
+                                affectedChanged,
+                                affectTips: affectedChanged && Object.keys(affected).length > 0 ? this.$t('relyChanged', [Object.keys(affected).join('/')]) : ''
                             }
                         } else {
                             restParam = {
@@ -188,15 +204,6 @@
                                 })
                             }
                         }
-                    }
-
-                    if (isFileParam(param.type)) {
-                        // 预览时，重新上传文件，会把文件类型的value变成对象而非字符串，这时要更新随机串回显到页面上
-                        const paramValue = this.paramValues[param.id]
-                        const newRandomString = paramValue?.latestRandomStringInPath
-                        const defaultRandomString = param.latestRandomStringInPath ?? param.randomStringInPath
-                        restParam.latestRandomStringInPath = newRandomString ?? defaultRandomString
-                        restParam.value = typeof paramValue === 'object' ? paramValue?.directory : paramValue
                     }
                     return {
                         ...param,
@@ -289,6 +296,25 @@
                 } catch (error) {
                     console.log(error)
                 }
+            },
+            getAffectedBy (originUrl) {
+                try {
+                    const PLUGIN_URL_PARAM_REG = /\{(.*?)(\?){0,1}\}/g
+                    return originUrl.match(PLUGIN_URL_PARAM_REG).map(item => item.replace(/\{(\S+)\}/, '$1')).reduce((acc, key) => {
+                        if (Object.hasOwnProperty.call(this.paramValues, key)) {
+                            acc[key] = this.paramValues[key]
+                        }
+                        return acc
+                    }, {})
+                } catch (error) {
+                    return {}
+                }
+            },
+            detectChanged (prev, current) {
+                if (prev && current) {
+                    return !isShallowEqual(prev, current)
+                }
+                return false
             }
         }
     }
@@ -339,6 +365,9 @@
         width: 100%;
         font-size: 12px;
         @include ellipsis();
+        &.affect-warning {
+            color: #FF9C01;
+        }
     }
     .params-desc-styles {
         margin-top: 32px;

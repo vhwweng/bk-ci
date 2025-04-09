@@ -32,12 +32,10 @@
     import { SET_PIPELINE_INFO } from '@/store/modules/atom/constants'
     import { handleTemplateNoPermission, TEMPLATE_RESOURCE_ACTION } from '@/utils/permission'
     import { mapActions, mapState } from 'vuex'
-
     export default {
         components: {
             emptyTips
         },
-
         data () {
             return {
                 isLoading: true,
@@ -66,7 +64,6 @@
             this.$store.commit('atom/resetPipelineSetting', null)
             this.$store.commit(`atom/${SET_PIPELINE_INFO}`, null)
         },
-
         methods: {
             ...mapActions({
                 enableTemplatePermissionManage: 'pipelines/enableTemplatePermissionManage',
@@ -115,7 +112,6 @@
         }
     }
 </script>
-
 <style lang="scss">
     .pipeline-subpages {
         min-height: 100%;
