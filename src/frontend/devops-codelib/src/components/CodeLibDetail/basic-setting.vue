@@ -435,9 +435,7 @@
         isScmGit,
         isScmSvn,
         isSvn,
-        isTGit,
-        isScmGit,
-        isScmSvn
+        isTGit
     } from '../../config/'
     import ResetAuthDialog from './ResetAuthDialog.vue'
  
