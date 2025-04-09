@@ -635,7 +635,7 @@ class ScmProxyService @Autowired constructor(private val client: Client) {
             ?: throw ErrorCodeException(defaultMessage = "ScmGit", errorCode = ProcessMessageCode.TGIT_INVALID)
         client.get(ServiceScmRepositoryApiResource::class).registerWebhook(
             projectId = projectId,
-            eventType = codeEventType?.convertScmEventType()?.name ?: ScmEventType.PUSH.name,
+            eventType = (codeEventType?.convertScmEventType() ?: ScmEventType.PUSH).value,
             repository = repo
         )
         return repo
