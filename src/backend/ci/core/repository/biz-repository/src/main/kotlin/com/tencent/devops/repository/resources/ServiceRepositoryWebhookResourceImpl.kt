@@ -34,6 +34,7 @@ import com.tencent.devops.repository.pojo.RepositoryWebhookRequest
 import com.tencent.devops.repository.pojo.webhook.WebhookData
 import com.tencent.devops.repository.pojo.webhook.WebhookParseRequest
 import com.tencent.devops.repository.service.RepositoryWebhookService
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 
 @Suppress("ALL")
@@ -46,7 +47,13 @@ class ServiceRepositoryWebhookResourceImpl @Autowired constructor(
         scmCode: String,
         request: WebhookParseRequest
     ): Result<WebhookData> {
-        return Result(repositoryWebhookService.webhookParse(scmCode = scmCode, request = request))
+        val webhookData = try {
+            repositoryWebhookService.webhookParse(scmCode = scmCode, request = request)
+        } catch (ignored: Exception) {
+            logger.warn("failed to parse webhook", ignored)
+            throw ignored
+        }
+        return Result(webhookData)
     }
 
     override fun saveWebhookRequest(repositoryWebhookRequest: RepositoryWebhookRequest): Result<Boolean> {
@@ -56,5 +63,9 @@ class ServiceRepositoryWebhookResourceImpl @Autowired constructor(
 
     override fun getWebhookRequest(requestId: String): Result<RepositoryWebhookRequest?> {
         return Result(repositoryWebhookService.getWebhookRequest(requestId = requestId))
+    }
+
+    companion object {
+        val logger = LoggerFactory.getLogger(ServiceRepositoryWebhookResourceImpl::class.java)
     }
 }
