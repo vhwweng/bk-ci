@@ -241,7 +241,9 @@ class UserStoreComponentQueryResourceImpl @Autowired constructor(
         storeType: String,
         storeCode: String,
         projectCode: String?,
-        instanceId: String?
+        instanceId: String?,
+        osName: String?,
+        osArch: String?
     ): Result<VersionInfo?> {
         return Result(
             storeComponentQueryService.getComponentUpgradeVersionInfo(
@@ -249,7 +251,9 @@ class UserStoreComponentQueryResourceImpl @Autowired constructor(
                 storeCode = storeCode,
                 storeType = storeType,
                 projectCode = projectCode ?: "",
-                instanceId = instanceId
+                instanceId = instanceId,
+                osName = osName,
+                osArch = osArch
             )
         )
     }
