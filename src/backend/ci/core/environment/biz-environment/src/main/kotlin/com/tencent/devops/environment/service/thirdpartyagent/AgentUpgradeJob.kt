@@ -33,12 +33,12 @@ import com.tencent.devops.common.api.util.Watcher
 import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.redis.RedisLock
 import com.tencent.devops.common.redis.RedisOperation
+import com.tencent.devops.common.util.LoopUtil
 import com.tencent.devops.environment.dao.thirdpartyagent.ThirdPartyAgentDao
 import com.tencent.devops.environment.pojo.AgentUpgradeType
 import com.tencent.devops.environment.service.thirdpartyagent.upgrade.AgentPropsScope
 import com.tencent.devops.environment.service.thirdpartyagent.upgrade.AgentScope
 import com.tencent.devops.environment.service.thirdpartyagent.upgrade.ProjectScope
-import com.tencent.devops.environment.utils.LoopUtil
 import com.tencent.devops.model.environment.tables.records.TEnvironmentThirdpartyAgentRecord
 import com.tencent.devops.project.api.service.ServiceProjectTagResource
 import org.jooq.DSLContext
@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 
@@ -67,6 +68,7 @@ class AgentUpgradeJob @Autowired constructor(
         private const val SECONDS_10 = 10000L
         private const val SECONDS_30 = 30000L
         private const val MAX_UPGRADE_AGENT_COUNT = 500 // 单次最大升级数量500，防止错误的配置导致超出系统承载能力
+        private val okStatus = setOf(AgentStatus.IMPORT_OK)
     }
 
     @Scheduled(initialDelay = SECONDS_10, fixedDelay = SECONDS_30)
@@ -105,7 +107,8 @@ class AgentUpgradeJob @Autowired constructor(
         }
     }
 
-    private fun listCanUpdateAgents(maxParallelCount: Int): List<TEnvironmentThirdpartyAgentRecord>? {
+    @Suppress("NestedBlockDepth", "LongMethod")
+    private fun listCanUpdateAgents(maxParallelCount: Int): Collection<TEnvironmentThirdpartyAgentRecord>? {
         val currentVersion = agentPropsScope.getWorkerVersion().ifBlank {
             logger.warn("invalid server worker version")
             return null
@@ -118,7 +121,7 @@ class AgentUpgradeJob @Autowired constructor(
 
         val currentDockerInitFileMd5 = agentPropsScope.getDockerInitFileMd5()
 
-        val vo = LoopUtil.LoopVo<Long, MutableList<TEnvironmentThirdpartyAgentRecord>>(id = 0L, data = mutableListOf())
+        val vo = LoopUtil.LoopVo<Long, MutableSet<TEnvironmentThirdpartyAgentRecord>>(id = 0L, data = HashSet())
 
         // 对于优先升级的项目的 agent 也一并计入并且放到前面
         fetchPriorityUpgradeAgents(
@@ -128,7 +131,7 @@ class AgentUpgradeJob @Autowired constructor(
             maxParallelCount = maxParallelCount,
             vo = vo
         )
-        //  经过前面fetchPriorityUpgradeAgents计算后，vo.data.size 不会超过 maxParallelCount， 所以不可能小于0
+        //  经过前面fetchPriorityUpgradeAgents计算后，vo.data.size 不会超过 maxParallelCount，所以不可能小于0
         val remainingCount = maxParallelCount - vo.data.size
         // 为了严谨性防止出现负数，仍然把小于判断加入if，杜绝可能出现的情况
         if (remainingCount <= 0) {
@@ -137,66 +140,68 @@ class AgentUpgradeJob @Autowired constructor(
 
         val limit = min(remainingCount, PageUtil.MAX_PAGE_SIZE) // 取最小的为单次分页查询数量
 
-        vo.thresholdCount = max(remainingCount / limit, vo.thresholdCount) // 循环次数以大为主，防止循环提前退出
-
-        LoopUtil.doLoop(vo) {
-            /*
-                2、消除原全量加载在线构建机的逻辑，改为按id增量查询，匹配至单次可升级最大数量即退出循环，
-                减少全量加载构建机记录带来的内存压力
-             */
-            val recs = thirdPartyAgentDao.listByStatusGtId(
-                dslContext = dslContext, startId = vo.id,
-                status = setOf(AgentStatus.IMPORT_OK), limit = limit
-            )
-            recs.ifEmpty {
-                vo.finish = true
-                return@doLoop
-            }.forEach { record ->
-                vo.id = max(vo.id, record.id)
-                if (checkProjectRouter(record.projectId)) {
-                    if (checkCanUpgrade(
-                            goAgentCurrentVersion = currentMasterVersion,
-                            workCurrentVersion = currentVersion,
-                            currentDockerInitFileMd5 = currentDockerInitFileMd5,
-                            record = record
-                        )
-                    ) {
-                        vo.data.add(record)
-                    }
-                }
-                if (vo.data.size >= remainingCount) {
+        vo.id = 0 // 从头开始遍历，避免因为前面取优先升级的agent，而忽略掉的之前可升级的agent
+        vo.thresholdCount = max(ceil(remainingCount / limit.toFloat()).toInt(), vo.thresholdCount) // 循环次数以大为主，防止循环提前退出
+        val metrics = LoopUtil.LoopMetrics(System.currentTimeMillis())
+        do {
+            val m = LoopUtil.doLoop(vo) {
+                /*
+                    2、消除原全量加载在线构建机的逻辑，改为按id增量查询，匹配至单次可升级最大数量即退出循环，
+                    减少全量加载构建机记录带来的内存压力
+                 */
+                val recs = thirdPartyAgentDao.listByStatusGtId(
+                    dslContext = dslContext, startId = vo.id,
+                    status = okStatus, limit = limit
+                )
+                recs.ifEmpty {
                     vo.finish = true
                     return@doLoop
+                }.forEach { record ->
+                    vo.id = max(vo.id, record.id)
+                    if (checkProjectRouter(record.projectId)) {
+                        if (checkCanUpgrade(
+                                goAgentCurrentVersion = currentMasterVersion,
+                                workCurrentVersion = currentVersion,
+                                currentDockerInitFileMd5 = currentDockerInitFileMd5,
+                                record = record
+                            )
+                        ) {
+                            vo.data.add(record)
+                        }
+                    }
+                    if (vo.data.size >= remainingCount) {
+                        vo.finish = true
+                        return@doLoop
+                    }
                 }
             }
-        }
+            metrics.add(m)
+        } while (!vo.finish)
 
-        return if (vo.data.size <= maxParallelCount) {
-            vo.data
-        } else {
-            vo.data.subList(0, maxParallelCount)
-        }
+        logger.info("listCanUpdateAgents|metrics: $metrics, tc=${vo.thresholdCount}, agent_size: ${vo.data.size}")
+        return vo.data
     }
 
+    @Suppress("NestedBlockDepth", "LongMethod")
     private fun fetchPriorityUpgradeAgents(
         currentVersion: String,
         currentMasterVersion: String,
         currentDockerInitFileMd5: String,
         maxParallelCount: Int,
-        vo: LoopUtil.LoopVo<Long, MutableList<TEnvironmentThirdpartyAgentRecord>>,
+        vo: LoopUtil.LoopVo<Long, MutableSet<TEnvironmentThirdpartyAgentRecord>>,
     ) {
-        val upgrades = mutableSetOf<String>()
-        upgrades.addAll(projectScope.fetchInPriorityUpgradeProject(AgentUpgradeType.GO_AGENT))
-        upgrades.addAll(projectScope.fetchInPriorityUpgradeProject(AgentUpgradeType.WORKER))
-        if (upgrades.isNotEmpty()) {
+        val priorityUpgradeProjects = mutableSetOf<String>()
+        priorityUpgradeProjects.addAll(projectScope.fetchInPriorityUpgradeProject(AgentUpgradeType.GO_AGENT))
+        priorityUpgradeProjects.addAll(projectScope.fetchInPriorityUpgradeProject(AgentUpgradeType.WORKER))
+        if (priorityUpgradeProjects.isNotEmpty()) {
             return
         }
         val limit = min(maxParallelCount, PageUtil.MAX_PAGE_SIZE)
         val metrics = LoopUtil.doLoop(vo) {
             val upImportOKAgents = thirdPartyAgentDao.listByStatusAndProjectGtId(
                 dslContext = dslContext,
-                projects = upgrades,
-                status = setOf(AgentStatus.IMPORT_OK),
+                projects = priorityUpgradeProjects,
+                status = okStatus,
                 startId = vo.id,
                 limit = limit
             )
