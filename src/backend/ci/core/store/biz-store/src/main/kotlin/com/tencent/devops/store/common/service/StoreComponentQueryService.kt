@@ -138,6 +138,8 @@ interface StoreComponentQueryService {
         storeType: String,
         storeCode: String,
         projectCode: String = "",
-        instanceId: String? = null
+        instanceId: String? = null,
+        osName: String? = null,
+        osArch: String? = null
     ): VersionInfo?
 }

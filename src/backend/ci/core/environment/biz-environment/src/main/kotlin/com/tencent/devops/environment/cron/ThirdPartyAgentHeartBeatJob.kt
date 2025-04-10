@@ -42,7 +42,7 @@ import com.tencent.devops.environment.dao.thirdpartyagent.ThirdPartyAgentDao
 import com.tencent.devops.environment.pojo.enums.NodeStatus
 import com.tencent.devops.environment.service.NodeWebsocketService
 import com.tencent.devops.environment.service.thirdpartyagent.ThirdPartAgentService
-import com.tencent.devops.environment.utils.LoopUtil
+import com.tencent.devops.common.util.LoopUtil
 import com.tencent.devops.environment.utils.ThirdPartyAgentHeartbeatUtils
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
@@ -96,16 +96,13 @@ class ThirdPartyAgentHeartBeatJob @Autowired constructor(
             vo.finish = true
             return
         }.forEach { record ->
-            vo.id = max(vo.id, record.id)
             if (record.nodeId == null) {
+                vo.id = max(vo.id, record.id)
                 return@forEach
             }
             val heartbeatTime = thirdPartyAgentHeartbeatUtils.getHeartbeatTime(record.id, record.projectId)
-                ?: return@forEach
-
-            val escape = System.currentTimeMillis() - heartbeatTime
             // 50s
-            if (escape > OK_AGENT_INTERVAL_MILLS) {
+            if (heartbeatTime != null && System.currentTimeMillis() - heartbeatTime > OK_AGENT_INTERVAL_MILLS) {
                 dslContext.transaction { configuration ->
                     val context = DSL.using(configuration)
                     val nodeRecord = nodeDao.get(context, record.projectId, record.nodeId)
@@ -128,6 +125,8 @@ class ThirdPartyAgentHeartBeatJob @Autowired constructor(
                     nodeDao.updateNodeStatus(context, setOf(record.nodeId), NodeStatus.ABNORMAL)
                 }
             }
+
+            vo.id = max(vo.id, record.id)
         }
     }
 
@@ -208,7 +207,7 @@ class ThirdPartyAgentHeartBeatJob @Autowired constructor(
     companion object {
         private val logger = LoggerFactory.getLogger(ThirdPartyAgentHeartBeatJob::class.java)
         private const val LOCK_KEY = "env_cron_agent_heartbeat_check"
-        private const val OK_AGENT_INTERVAL_MILLS = 10 * THIRD_PARTY_AGENT_HEARTBEAT_INTERVAL * 1000  // 10个心跳周期内未上报的
+        private const val OK_AGENT_INTERVAL_MILLS = 10 * THIRD_PARTY_AGENT_HEARTBEAT_INTERVAL * 1000 // 10个心跳周期内未上报的
         private const val UNIMPORT_AGENT_INTERVAL_MILLS = 2 * THIRD_PARTY_AGENT_HEARTBEAT_INTERVAL * 1000 // 2个心跳周期内未完成导入
         private const val MAX_LOOP_MILLS = 10 * 60 * 1000L // 10 minutes
     }

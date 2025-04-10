@@ -154,8 +154,12 @@ class ThirdPartyAgentDao {
     ): List<TEnvironmentThirdpartyAgentRecord> {
         with(TEnvironmentThirdpartyAgent.T_ENVIRONMENT_THIRDPARTY_AGENT) {
             return dslContext.selectFrom(this)
-                .where(STATUS.`in`(status.map { it.status }))
-                .and(ID.gt(startId))
+                .where(ID.gt(startId)).let { where ->
+                    if (status.isNotEmpty()) {
+                        where.and(STATUS.`in`(status.map { s -> s.status }))
+                    }
+                    where
+                }
                 .orderBy(ID.asc())
                 .limit(limit)
                 .fetch()
@@ -171,10 +175,15 @@ class ThirdPartyAgentDao {
     ): List<TEnvironmentThirdpartyAgentRecord> {
         with(TEnvironmentThirdpartyAgent.T_ENVIRONMENT_THIRDPARTY_AGENT) {
             return dslContext.selectFrom(this)
-                .where(PROJECT_ID.`in`(projects))
-                .and(STATUS.`in`(status.map { it.status }))
-                .and(ID.gt(startId))
-                .orderBy(ID.asc())
+                .where(ID.gt(startId)).let { where ->
+                    if (projects.isNotEmpty()) {
+                        where.and(PROJECT_ID.`in`(projects))
+                    }
+                    if (status.isNotEmpty()) {
+                        where.and(STATUS.`in`(status.map { s -> s.status }))
+                    }
+                    where
+                }.orderBy(ID.asc())
                 .limit(limit)
                 .fetch()
         }
@@ -187,6 +196,9 @@ class ThirdPartyAgentDao {
         status: AgentStatus,
         os: OS
     ): Int {
+        if (nodeIds.isEmpty()) {
+            throw IllegalArgumentException("Node IDs cannot be empty")
+        }
         with(TEnvironmentThirdpartyAgent.T_ENVIRONMENT_THIRDPARTY_AGENT) {
             return dslContext.selectCount()
                 .from(this)
@@ -260,8 +272,12 @@ class ThirdPartyAgentDao {
         with(TEnvironmentThirdpartyAgent.T_ENVIRONMENT_THIRDPARTY_AGENT) {
             return dslContext.update(this)
                 .set(STATUS, status.status)
-                .where(ID.`in`(ids))
-                .and(PROJECT_ID.eq(projectId))
+                .where(PROJECT_ID.eq(projectId)).let { where ->
+                    if (ids.isNotEmpty()) {
+                        where.and(ID.`in`(ids))
+                    }
+                    where
+                }
                 .execute()
         }
     }
@@ -377,6 +393,9 @@ class ThirdPartyAgentDao {
         ids: Set<Long>,
         projectId: String
     ): List<TEnvironmentThirdpartyAgentRecord> {
+        if (ids.isEmpty()) {
+            throw IllegalArgumentException("ids cannot be empty")
+        }
         with(TEnvironmentThirdpartyAgent.T_ENVIRONMENT_THIRDPARTY_AGENT) {
             return dslContext.selectFrom(this)
                 .where(ID.`in`(ids))
@@ -414,6 +433,9 @@ class ThirdPartyAgentDao {
         nodeIds: Collection<Long>,
         projectId: String
     ): Result<TEnvironmentThirdpartyAgentRecord> {
+        if (nodeIds.isEmpty()) {
+            throw IllegalArgumentException("The node IDs must be non-empty")
+        }
         with(TEnvironmentThirdpartyAgent.T_ENVIRONMENT_THIRDPARTY_AGENT) {
             return dslContext.selectFrom(this)
                 .where(NODE_ID.`in`(nodeIds))
@@ -469,6 +491,7 @@ class ThirdPartyAgentDao {
     }
 
     fun saveAgentEnvs(dslContext: DSLContext, agentIds: Set<Long>, envStr: String) {
+        if (agentIds.isEmpty()) { throw IllegalArgumentException("The agent IDs must be non-empty") }
         with(TEnvironmentThirdpartyAgent.T_ENVIRONMENT_THIRDPARTY_AGENT) {
             dslContext.update(this)
                 .set(AGENT_ENVS, envStr)
@@ -492,6 +515,9 @@ class ThirdPartyAgentDao {
     }
 
     fun refreshGateway(dslContext: DSLContext, oldToNewMap: Map<String, String>) {
+        if (oldToNewMap.isEmpty()) {
+            return
+        }
         with(TEnvironmentThirdpartyAgent.T_ENVIRONMENT_THIRDPARTY_AGENT) {
             dslContext.transaction { configuration ->
                 val updates = mutableListOf<UpdateSetMoreStep<TEnvironmentThirdpartyAgentRecord>>()
@@ -522,9 +548,12 @@ class ThirdPartyAgentDao {
 
     fun countAgentByStatus(dslContext: DSLContext, status: Set<AgentStatus>): Long {
         with(TEnvironmentThirdpartyAgent.T_ENVIRONMENT_THIRDPARTY_AGENT) {
-            return dslContext.selectCount().from(this)
-                .where(STATUS.`in`(status))
-                .fetchOne(0, Long::class.java)!!
+            return dslContext.selectCount().from(this).let { from ->
+                if (status.isNotEmpty()) {
+                    from.where(STATUS.`in`(status))
+                }
+                from
+            }.fetchOne(0, Long::class.java)!!
         }
     }
 }
