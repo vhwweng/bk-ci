@@ -416,6 +416,7 @@ class PipelineVersionFacadeService @Autowired constructor(
                         version = draftVersion.version,
                         versionName = branchName,
                         repoHashId = yamlInfo.repoHashId,
+                        scmType = yamlInfo.scmType!!,
                         filePath = filePath,
                         content = draftVersion.yaml ?: "",
                         commitMessage = request.description ?: "update",
@@ -526,6 +527,7 @@ class PipelineVersionFacadeService @Autowired constructor(
                         content = draftVersion.yaml ?: "",
                         commitMessage = request.description ?: "update",
                         repoHashId = yamlInfo.repoHashId,
+                        scmType = yamlInfo.scmType!!,
                         filePath = yamlInfo.filePath,
                         targetAction = targetAction,
                         targetBranch = request.targetBranch
@@ -742,11 +744,11 @@ class PipelineVersionFacadeService @Autowired constructor(
         } catch (e: PipelineTransferException) {
             Triple(
                 false, null, I18nUtil.getCodeLanMessage(
-                messageCode = e.errorCode,
-                params = e.params,
-                language = I18nUtil.getLanguage(I18nUtil.getRequestUserId()),
-                defaultMessage = e.defaultMessage
-            )
+                    messageCode = e.errorCode,
+                    params = e.params,
+                    language = I18nUtil.getLanguage(I18nUtil.getRequestUserId()),
+                    defaultMessage = e.defaultMessage
+                )
             )
         }
         return PipelineVersionWithModel(
@@ -1116,7 +1118,6 @@ class PipelineVersionFacadeService @Autowired constructor(
         checkPermission: Boolean = true
     ): String {
         repositoryVersionService.deletePipelineVersion(
-            userId = userId,
             projectId = projectId,
             pipelineId = pipelineId,
             version = version

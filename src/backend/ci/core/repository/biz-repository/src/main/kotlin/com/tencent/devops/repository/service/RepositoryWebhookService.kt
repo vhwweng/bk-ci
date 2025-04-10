@@ -1,10 +1,8 @@
 package com.tencent.devops.repository.service
 
-import com.tencent.bkrepo.common.api.util.JsonUtils
 import com.tencent.devops.common.api.exception.ErrorCodeException
 import com.tencent.devops.common.api.exception.ParamBlankException
 import com.tencent.devops.common.api.util.HashUtil
-import com.tencent.devops.common.api.util.JsonUtil
 import com.tencent.devops.repository.constant.RepositoryMessageCode.ERROR_WEBHOOK_SERVER_REPO_FULL_NAME_IS_EMPTY
 import com.tencent.devops.repository.dao.RepositoryWebhookRequestDao
 import com.tencent.devops.repository.pojo.RepoCondition
@@ -41,8 +39,7 @@ class RepositoryWebhookService @Autowired constructor(
         val webhook = webhookApiService.webhookParse(scmCode = scmCode, request = hookRequest)
         val serverRepo = webhook.repository()
         logger.info(
-            "webhook parse result|scmCode:$scmCode|id:${serverRepo.id}|fullName:${serverRepo.fullName}" +
-                    "|data:${JsonUtil.toJson(webhook, false)}"
+            "webhook parse result|scmCode:$scmCode|id:${serverRepo.id}|fullName:${serverRepo.fullName}"
         )
         if (serverRepo.fullName.isNullOrBlank()) {
             throw ErrorCodeException(
@@ -80,7 +77,6 @@ class RepositoryWebhookService @Autowired constructor(
                 )
             }
         }
-        logger.info("enriched webhook|${JsonUtil.toJson(enWebhook, false)}")
         return WebhookData(
             webhook = enWebhook,
             repositories = repositories

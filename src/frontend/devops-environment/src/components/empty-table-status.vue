@@ -5,18 +5,15 @@
     >
         <div style="font-size: 14px;">{{ typeMap[type] }}</div>
         <template v-if="type === 'search-empty'">
-            <i18n
-                tag="div"
-                path="environment.可以尝试 调整关键词 或 清空筛选条件"
-                class="empty-tips"
-            >
-                <bk-button
-                    text
+            <div class="empty-tips">
+                {{ $t('environment.可以尝试 调整关键词 或') }}
+                <button
+                    class="bk-text-button"
                     @click="handleClear"
                 >
                     {{ $t('environment.清空筛选条件') }}
-                </bk-button>
-            </i18n>
+                </button>
+            </div>
         </template>
     </bk-exception>
 </template>
@@ -46,7 +43,10 @@
     }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
+    ::v-deep .bk-exception-img.part-img {
+        margin-top: 15%;
+    }
     .empty-tips {
         margin-top: 8px;
         font-size: 12px;

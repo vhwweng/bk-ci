@@ -19,7 +19,7 @@
 const webpackBaseConfig = require('../webpack.base')
 
 module.exports = (env, argv) => {
-    const config = webpackBaseConfig({
+    return webpackBaseConfig({
         env,
         argv,
         entry: {
@@ -29,5 +29,4 @@ module.exports = (env, argv) => {
         dist: '/ticket',
         port: 8004
     })
-    return config
 }

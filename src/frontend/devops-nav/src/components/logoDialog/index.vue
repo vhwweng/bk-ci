@@ -112,7 +112,7 @@
             margin-right: 16px;
             width: 128px;
             height: 128px;
-            border: 1px solid $fontLighterColor;
+            border: 1px solid $fontLigtherColor;
             background: $borderColor;
             &:before {
                 content: '';
@@ -121,7 +121,7 @@
                 height: 124px;
                 background: #fff;
                 border-radius: 50%;
-                border: 1px dashed $fontLighterColor;
+                border: 1px dashed $fontLigtherColor;
             }
             img {
                 position: relative;
@@ -136,7 +136,7 @@
             .logo-desc {
                 line-height: 24px;
                 font-size: 12px;
-                color: $fontLighterColor;
+                color: $fontLigtherColor;
             }
         }
         .inputfile {

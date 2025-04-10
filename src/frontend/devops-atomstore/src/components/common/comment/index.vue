@@ -60,7 +60,7 @@
 
         watch: {
             reply (val) {
-                const reg = this.replyToUser ? new RegExp(`^${this.$t('store.回复')}@${this.replyToUser}：`) : /^/
+                const reg = this.replyToUser ? new RegExp(`^回复@${this.replyToUser}：`) : /^/
                 const isMatchUser = reg.test(val)
                 if (!isMatchUser) this.replyToUser = ''
             }
@@ -70,16 +70,14 @@
             ...mapActions('store', [
                 'requestAtomReplyComment',
                 'requestTemplateReplyComment',
-                'requestIDEReplyComment',
                 'requestImageReplyComment',
-                'requestServiceReplyComment',
                 'setCommentReplay',
                 'clearCommentReply'
             ]),
 
             replyComment (user) {
-                const reg = this.replyToUser ? new RegExp(`^${this.$t('store.回复')}@${this.replyToUser}：`) : /^/
-                const replaceStr = user ? `${this.$t('store.回复')}@${user}：` : ''
+                const reg = this.replyToUser ? new RegExp(`^回复@${this.replyToUser}：`) : /^/
+                const replaceStr = user ? `${this.$t('store.回复@')}${user}：` : ''
 
                 this.replyToUser = user
                 this.reply = this.reply.replace(reg, replaceStr)
@@ -103,7 +101,7 @@
                     return
                 }
 
-                const reg = new RegExp(`^${this.$t('store.回复')}@${this.replyToUser}：`)
+                const reg = new RegExp(`^回复@${this.replyToUser}：`)
                 replyContent = replyContent.replace(reg, '')
 
                 const id = this.comment.data.commentId
@@ -112,9 +110,7 @@
                 const funObj = {
                     atom: () => this.requestAtomReplyComment({ id, postData }),
                     template: () => this.requestTemplateReplyComment({ id, postData }),
-                    ide: () => this.requestIDEReplyComment({ id, postData }),
-                    image: () => this.requestImageReplyComment({ id, postData }),
-                    service: () => this.requestServiceReplyComment({ id, postData })
+                    image: () => this.requestImageReplyComment({ id, postData })
                 }
 
                 funObj[type]().then((res) => {
@@ -136,7 +132,7 @@
             width: calc(100% - 77px);
             height: 56px;
             padding: 5px 5px;
-            margin-left: 77px;
+            margin-left: 59px;
             &:focus {
                 border: 1px solid $primaryColor;
                 outline: none;

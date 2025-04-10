@@ -55,8 +55,7 @@ interface StoreComponentManageService {
         storeType: StoreTypeEnum,
         version: String,
         projectCode: String,
-        userId: String,
-        instanceId: String? = null
+        userId: String
     ): Result<Boolean>
 
     /**

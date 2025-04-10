@@ -165,36 +165,6 @@ export const DEFAULT_PARAM = {
         required: true,
         readOnly: false
     },
-    [CONTAINER_TYPE]: {
-        id: 'buildResource',
-        name: 'buildResource',
-        defaultValue: '',
-        defalutValueLabel: 'defaultValue',
-        defaultValueLabelTips: 'defaultValueDesc',
-        // containerType: {
-        //     os: 'LINUX',
-        //     buildType: 'DOCKER'
-        // },
-        desc: '',
-        options: [],
-        type: CONTAINER_TYPE,
-        typeDesc: 'buildResource',
-        required: true,
-        readOnly: false
-    },
-    [ARTIFACTORY]: {
-        id: 'artifactory',
-        defaultValue: '',
-        defalutValueLabel: 'defaultValue',
-        defaultValueLabelTips: 'defaultValueDesc',
-        desc: '',
-        options: [],
-        glob: '*',
-        properties: {},
-        type: ARTIFACTORY,
-        typeDesc: 'artifactory',
-        required: true
-    },
     [SUB_PIPELINE]: {
         id: 'subPipeline',
         name: 'subPipeline',
@@ -214,6 +184,7 @@ export const DEFAULT_PARAM = {
         defaultValue: '',
         defalutValueLabel: 'fileDefaultValueLabel',
         defaultValueLabelTips: 'customFileLabelTips',
+        enableVersionControl: false,
         desc: '',
         type: CUSTOM_FILE,
         typeDesc: 'custom_file',
@@ -356,10 +327,6 @@ export const CODE_LIB_TYPE = [
     {
         id: 'CODE_GIT',
         name: 'GIT'
-    },
-    {
-        id: 'CODE_SVN',
-        name: 'SVN'
     },
     {
         id: 'GITHUB',

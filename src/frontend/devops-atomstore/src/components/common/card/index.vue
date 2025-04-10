@@ -11,7 +11,7 @@
         <template v-else>
             <img
                 class="card-pic atom-logo"
-                :src="atom.logoUrl || defaultUrl"
+                :src="atom.logoUrl"
             >
             <p
                 v-bk-overflow-tips
@@ -54,7 +54,6 @@
 </template>
 
 <script>
-    import { DEFAULT_LOGO_URL } from '@/utils/'
     import commentRate from '../comment-rate'
     import atom from './atom.vue'
 
@@ -67,12 +66,6 @@
         props: {
             atom: Object,
             hasSummary: Boolean
-        },
-
-        data () {
-            return {
-                defaultUrl: DEFAULT_LOGO_URL
-            }
         },
 
         computed: {

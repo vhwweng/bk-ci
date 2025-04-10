@@ -28,7 +28,9 @@
             }
         },
         created () {
-            const { type } = this
+            let {
+                type
+            } = this
 
             switch (type) {
                 case 'no-result':

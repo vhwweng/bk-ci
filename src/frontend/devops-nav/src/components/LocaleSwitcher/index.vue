@@ -50,7 +50,7 @@
             this.showLocaleList = false
         }
 
-        toggleList () {
+        toggleList (show) {
             this.showLocaleList = !this.showLocaleList
         }
 
@@ -79,7 +79,7 @@
 <style lang="scss">
     @import '../../assets/scss/conf';
     .devops-locale-switcher {
-        color: $fontLighterColor;
+        color: $fontLigtherColor;
         height: 100%;
         &-entry {
             cursor: pointer;

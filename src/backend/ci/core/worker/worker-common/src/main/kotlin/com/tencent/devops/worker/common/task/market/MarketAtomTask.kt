@@ -462,32 +462,29 @@ open class MarketAtomTask : ITask() {
         try {
             if (!atomExecuteFile.exists() || atomExecuteFile.length() < 1) {
                 logger.info("local file[$atomExecuteFileName] is not exist,start downloading from the repo!")
-                val cacheFlag = atomData.atomStatus !in setOf(
-                    AtomStatusEnum.TESTING.name,
-                    AtomStatusEnum.CODECCING.name,
-                    AtomStatusEnum.AUDITING.name
-                )
-
+                // 下载atom执行文件
                 downloadAtomExecuteFile(
                     projectId = projectId,
                     atomFilePath = atomFilePath,
                     atomExecuteFile = atomExecuteFile,
-                    authFlag = atomData.authFlag ?: true,
-                    queryCacheFlag = cacheFlag
+                    authFlag = atomData.authFlag ?: true
                 )
-
-                val shouldCache = atomData.authFlag != true
-                        && checkSha1(atomExecuteFile, atomData.shaContent!!)
-                        && cacheFlag
-                        && !fileCacheDir.contains(buildId)
-
-                if (shouldCache) {
+                if (atomData.authFlag != true && checkSha1(atomExecuteFile, atomData.shaContent!!) &&
+                    atomData.atomStatus !in listOf(
+                        AtomStatusEnum.TESTING.name,
+                        AtomStatusEnum.CODECCING.name,
+                        AtomStatusEnum.AUDITING.name
+                    ) && !fileCacheDir.contains(buildId)
+                ) {
                     // 无需鉴权的插件包且插件包内容是完整的才放入缓存中
                     // 未发布的插件版本内容可能会变化故也不存入缓存、工作空间如果以构建ID为维度没法实现资源复用故也不存入缓存
                     bkDiskLruFileCache.put(fileCacheKey, atomExecuteFile)
                 }
-            } else if (atomData.authFlag == true) {
-                bkDiskLruFileCache.remove(fileCacheKey)
+            } else {
+                if (atomData.authFlag == true) {
+                    // 插件如果是敏感插件需要删除插件包的缓存
+                    bkDiskLruFileCache.remove(fileCacheKey)
+                }
             }
         } finally {
             bkDiskLruFileCache.close()
@@ -1067,16 +1064,14 @@ open class MarketAtomTask : ITask() {
         projectId: String,
         atomFilePath: String,
         atomExecuteFile: File,
-        authFlag: Boolean,
-        queryCacheFlag: Boolean
+        authFlag: Boolean
     ): File {
         try {
             atomApi.downloadAtom(
                 projectId = projectId,
                 atomFilePath = atomFilePath,
                 file = atomExecuteFile,
-                authFlag = authFlag,
-                queryCacheFlag = queryCacheFlag
+                authFlag = authFlag
             )
             return atomExecuteFile
         } catch (t: Throwable) {

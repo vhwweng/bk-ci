@@ -42,7 +42,6 @@
 </template>
 
 <script>
-    import { mapState, mapActions } from 'vuex'
     import P4 from './P4'
     import SVN from './SVN'
     import Git from './Git'
@@ -62,9 +61,9 @@
         getCodelibConfig,
         CODE_REPOSITORY_CACHE
     } from '../../config/'
+    import { mapActions, mapState } from 'vuex'
     import { parsePathRegion } from '../../utils'
     import dialogMixin from './mixin.js'
-
     export default {
         name: 'codelib-dialog',
         components: {
@@ -100,7 +99,7 @@
                 'githubOAuth',
                 'showCodelibDialog'
             ]),
-
+            
             oAuth () {
                 const oauthMap = {
                     isTGit: this.tgitOAuth,
@@ -421,12 +420,6 @@
     .example-tips {
         color: #c4c6cd;
         font-size: 12px;
-    }
-</style>
-
-<style lang="scss" scoped>
-    .bk-form-control {
-        display: list-item !important;
     }
 </style>
 

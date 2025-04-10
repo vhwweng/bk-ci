@@ -68,7 +68,7 @@
 <script>
     import { setting } from '@/http'
     import { mapState } from 'vuex'
-    import LINK_CONFIG from '../../../conf/link-config'
+    import LINK_CONFIG from '@/conf/link-config.js'
 
     export default {
         data () {

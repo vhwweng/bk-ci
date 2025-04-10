@@ -178,7 +178,6 @@ class MarketStoreQueryDao {
             conditions.add(tStoreBase.STATUS.eq(StoreStatusEnum.RELEASED.name))
             conditions.add(tStoreBase.LATEST_FLAG.eq(true))
         }
-        conditions.add(tStoreBaseFeature.SHOW_FLAG.eq(true))
         storeInfoQuery.recommendFlag?.let {
             conditions.add(tStoreBaseFeature.RECOMMEND_FLAG.eq(it))
         }

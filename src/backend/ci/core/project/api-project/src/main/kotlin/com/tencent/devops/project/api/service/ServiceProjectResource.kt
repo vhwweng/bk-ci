@@ -73,10 +73,7 @@ interface ServiceProjectResource {
     fun list(
         @Parameter(description = "用户ID", required = false)
         @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-        userId: String,
-        @Parameter(description = "userId", required = false)
-        @QueryParam("productIds")
-        productIds: String? = null
+        userId: String
     ): Result<List<ProjectVO>>
 
     @GET

@@ -43,13 +43,11 @@
 
         computed: {
             ...mapGetters('store', {
-                detail: 'getDetail',
-                userInfo: 'getUserInfo'
+                detail: 'getDetail'
             }),
 
             componentData () {
                 return {
-                    userInfo: this.userInfo,
                     detail: this.detail,
                     type: this.$route.params.type
                 }

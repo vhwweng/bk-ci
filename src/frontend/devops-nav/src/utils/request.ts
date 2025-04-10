@@ -1,6 +1,5 @@
 import { showLoginPopup } from '@/utils/util'
 import axios, { AxiosError, AxiosResponse, CreateAxiosDefaults } from 'axios'
-import cookie from 'js-cookie'
 import Vue from 'vue'
 declare module 'axios' {
     export interface AxiosRequestConfig {
@@ -17,36 +16,17 @@ const request = axios.create({
         return status >= 200 && status <= 503
     },
     withCredentials: true,
-    xsrfCookieName: 'paas_perm_csrftoken', // 注入csrfToken
+    xsrfCookieName: 'backend_csrftoken', // 注入csrfToken
     xsrfHeaderName: 'X-CSRFToken' // 注入csrfToken
 } as CreateAxiosDefaults)
 
 function errorHandler (error: AxiosError) {
-    if (typeof error.response === 'undefined') {
+    if (typeof error.response.data === 'undefined') {
         // HACK REDIRECT 302
         showLoginPopup()
     }
     return Promise.reject(Error('网络出现问题，请检查你的网络是否正常'))
 }
-
-request.interceptors.request.use(config => {
-    if (/(\/?ms\/backend|\/?backend)/.test(config.url)) {
-        return config
-    }
-
-    const routePid = getCurrentPid()
-    return {
-        ...config,
-        headers: routePid
-            ? {
-                'X-DEVOPS-PROJECT-ID': routePid,
-                ...(config.headers || {})
-            }
-            : config.headers
-    }
-}, function (error) {
-    return Promise.reject(error)
-})
 
 request.interceptors.response.use((response: AxiosResponse) => {
     const originalResponse = response.config.originalResponse || false
@@ -54,8 +34,6 @@ request.interceptors.response.use((response: AxiosResponse) => {
 
     if (httpStatus === 401) {
         showLoginPopup()
-        const err = { status: httpStatus, message: '登录态已失效' }
-        return Promise.reject(err)
     } else if (httpStatus === 503) {
         return Promise.reject({ // eslint-disable-line
             status: httpStatus,
@@ -66,13 +44,6 @@ request.interceptors.response.use((response: AxiosResponse) => {
     } else if (httpStatus === 403) {
         const errorMsg = { httpStatus, code: httpStatus, message }
         return Promise.reject(errorMsg)
-    } else if (httpStatus >= 400) {
-        const err = {
-            message: message || `unknow Error httpStatus: ${httpStatus}`,
-            status,
-            httpStatus
-        }
-        return Promise.reject(err)
     } else if ((typeof code !== 'undefined' && code !== 0) || (typeof status !== 'undefined' && status !== 0)) {
         let msg = message
         if (Object.prototype.toString.call(message) === '[object Object]') {
@@ -86,16 +57,6 @@ request.interceptors.response.use((response: AxiosResponse) => {
 
     return originalResponse ? response.data : data
 }, errorHandler)
-
-const getCurrentPid = () => {
-    try {
-        // @ts-ignore
-        const cookiePid = cookie.get(X_DEVOPS_PROJECT_ID)
-        return window.GLOBAL_PID || cookiePid
-    } catch (e) {
-        return undefined
-    }
-}
 
 Vue.prototype.$ajax = request
 

@@ -3,16 +3,6 @@
         v-bkloading="{ isLoading }"
         class="detail-score"
     >
-        <main
-            class="main-swiper"
-            v-if="detail.mediaList && detail.mediaList.length"
-        >
-            <media-list
-                :list="detail.mediaList"
-                v-if="!isLoading"
-            ></media-list>
-        </main>
-
         <section class="summary-tab">
             <p ref="edit">
                 <mavon-editor
@@ -117,18 +107,16 @@
 <script>
     import { mapActions, mapGetters } from 'vuex'
     import animatedInteger from '../animatedInteger'
-    import comment from '../comment'
     import commentRate from '../comment-rate'
+    import comment from '../comment'
     import commentDialog from '../comment/commentDialog.vue'
-    import mediaList from '../mediaList/index'
 
     export default {
         components: {
             comment,
             commentRate,
             commentDialog,
-            animatedInteger,
-            mediaList
+            animatedInteger
         },
 
         data () {
@@ -141,16 +129,12 @@
                     comment: {
                         atom: (postData) => this.requestAtomComments(postData),
                         template: (postData) => this.requestTemplateComments(postData),
-                        ide: (postData) => this.requestIDEComments(postData),
-                        image: (postData) => this.requestImageComments(postData),
-                        service: (postData) => this.requestServiceComments(postData)
+                        image: (postData) => this.requestImageComments(postData)
                     },
                     scoreDetail: {
                         atom: () => this.requestAtomScoreDetail(this.detailCode),
                         template: () => this.requestTemplateScoreDetail(this.detailCode),
-                        ide: () => this.requestIDEScoreDetail(this.detailCode),
-                        image: () => this.requestImageScoreDetail(this.detailCode),
-                        service: () => this.requestServiceScoreDetail(this.detailCode)
+                        image: () => this.requestImageScoreDetail(this.detailCode)
                     }
                 }
             }
@@ -183,12 +167,8 @@
                 'requestAtomScoreDetail',
                 'requestTemplateComments',
                 'requestTemplateScoreDetail',
-                'requestIDEComments',
-                'requestIDEScoreDetail',
                 'requestImageComments',
-                'requestImageScoreDetail',
-                'requestServiceComments',
-                'requestServiceScoreDetail'
+                'requestImageScoreDetail'
             ]),
 
             getSummaryScore () {
@@ -281,7 +261,7 @@
     }
 
     .overflow {
-        max-height: 120px;
+        max-height: 65px;
         overflow: hidden;
     }
 

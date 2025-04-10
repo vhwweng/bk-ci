@@ -10,7 +10,6 @@
             <router-link
                 :to="{ name: 'atomWork' }"
                 class="g-title-work"
-                v-if="type !== 'ide'"
             >
                 {{ $t('store.工作台') }}
             </router-link>
@@ -49,36 +48,28 @@
 
 <script>
     import api from '@/api'
-    import breadCrumbs from '@/components/bread-crumbs.vue'
     import { mapActions, mapGetters } from 'vuex'
+    import breadCrumbs from '@/components/bread-crumbs.vue'
     import atomInfo from '../../components/common/detail-info/atom'
-    import ideInfo from '../../components/common/detail-info/ide'
-    import imageInfo from '../../components/common/detail-info/image'
-    import serviceInfo from '../../components/common/detail-info/service'
     import templateInfo from '../../components/common/detail-info/template'
-    import codeSection from '../../components/common/detailTab/codeSection'
+    import imageInfo from '../../components/common/detail-info/image'
     import detailScore from '../../components/common/detailTab/detailScore'
-    import errorCodeDetail from '../../components/common/detailTab/errorCodeDetail'
+    import codeSection from '../../components/common/detailTab/codeSection'
+    import yamlDetail from '../../components/common/detailTab/yamlDetail'
     import outputDetail from '../../components/common/detailTab/outputDetail'
     import qualityDetail from '../../components/common/detailTab/qualityDetail'
-    import yamlDetail from '../../components/common/detailTab/yamlDetail'
-    import versionLogDetail from '../../components/common/detailTab/versionLogDetail'
 
     export default {
         components: {
             atomInfo,
             templateInfo,
-            ideInfo,
             imageInfo,
             detailScore,
-            serviceInfo,
             codeSection,
             breadCrumbs,
             yamlDetail,
             outputDetail,
-            qualityDetail,
-            errorCodeDetail,
-            versionLogDetail
+            qualityDetail
         },
 
         data () {
@@ -103,29 +94,16 @@
                 return {
                     atom: [
                         { componentName: 'detailScore', label: this.$t('store.概述'), name: 'des' },
-                        // { componentName: 'codeSection', label: this.$t('store.YAMLV1'), name: 'YAML', bindData: { code: this.detail.codeSection, limitHeight: false, name: 'YAML', currentTab: this.currentTab, getDataFunc: this.getAtomYaml }, hidden: (!this.detail.yamlFlag || !this.detail.recommendFlag) },
                         { componentName: 'yamlDetail', label: this.$t('store.YAMLV2'), name: 'YAMLV2', bindData: { code: this.detail.codeSectionV2, limitHeight: false, name: 'YAMLV2', currentTab: this.currentTab, getDataFunc: this.getAtomYamlV2 }, hidden: (!this.detail.yamlFlag || !this.detail.recommendFlag) },
                         { componentName: 'outputDetail', label: this.$t('store.输出参数'), name: 'output', bindData: { outputData: this.detail.outputData, name: 'output', currentTab: this.currentTab, classifyCode: this.detail.classifyCode } },
-                        { componentName: 'qualityDetail', label: this.$t('store.质量红线指标'), name: 'quality', bindData: { qualityData: this.detail.qualityData }, hidden: this.detail.qualityData && !this.detail.qualityData.length },
-                        // { componentName: 'errorCodeDetail', label: this.$t('store.错误码'), name: 'errorCode', bindData: { errorCodeData: this.detail.errorCodeData, name: 'errorCode', currentTab: this.currentTab } }
-                        { componentName: 'versionLogDetail', label: this.$t('store.版本日志'), name: 'versionLog', bindData: { name: 'versionLog', currentTab: this.currentTab } }
+                        { componentName: 'qualityDetail', label: this.$t('store.质量红线指标'), name: 'quality', bindData: { qualityData: this.detail.qualityData }, hidden: this.detail.qualityData && !this.detail.qualityData.length }
                     ],
                     template: [
-                        { componentName: 'detailScore', label: this.$t('store.概述'), name: 'des' },
-                        { componentName: 'versionLogDetail', label: this.$t('store.版本日志'), name: 'versionLog', bindData: { name: 'versionLog', currentTab: this.currentTab } }
-                    ],
-                    ide: [
-                        { componentName: 'detailScore', label: this.$t('概述'), name: 'des' },
-                        { componentName: 'versionLogDetail', label: this.$t('store.版本日志'), name: 'versionLog', bindData: { name: 'versionLog', currentTab: this.currentTab } }
+                        { componentName: 'detailScore', label: this.$t('store.概述'), name: 'des' }
                     ],
                     image: [
                         { componentName: 'detailScore', label: this.$t('store.概述'), name: 'des' },
-                        { componentName: 'codeSection', label: 'Dockerfile', name: 'Dockerfile', bindData: { code: this.detail.codeSection, limitHeight: false } },
-                        { componentName: 'versionLogDetail', label: this.$t('store.版本日志'), name: 'versionLog', bindData: { name: 'versionLog', currentTab: this.currentTab } }
-                    ],
-                    service: [
-                        { componentName: 'detailScore', label: this.$t('概述'), name: 'des' },
-                        { componentName: 'versionLogDetail', label: this.$t('store.版本日志'), name: 'versionLog', bindData: { name: 'versionLog', currentTab: this.currentTab } }
+                        { componentName: 'codeSection', label: 'Dockerfile', name: 'Dockerfile', bindData: { code: this.detail.codeSection, limitHeight: false } }
                     ]
                 }
             },
@@ -138,12 +116,6 @@
                         break
                     case 'image':
                         name = this.$t('store.容器镜像')
-                        break
-                    case 'ide':
-                        name = this.$t('store.IDE插件')
-                        break
-                    case 'service':
-                        name = this.$t('store.微扩展')
                         break
                     default:
                         name = this.$t('store.流水线插件')
@@ -172,12 +144,10 @@
                 'requestAtom',
                 'requestAtomStatistic',
                 'requestTemplateDetail',
-                'requestIDE',
                 'requestImage',
                 'getUserApprovalInfo',
                 'requestImageCategorys',
-                'getAtomYamlV2',
-                'requestService'
+                'getAtomYamlV2'
             ]),
 
             getDetail () {
@@ -185,9 +155,7 @@
                 const funObj = {
                     atom: () => this.getAtomDetail(),
                     template: () => this.getTemplateDetail(),
-                    ide: () => this.getIDEDetail(),
-                    image: () => this.getImageDetail(),
-                    service: () => this.getServiceDetail()
+                    image: () => this.getImageDetail()
                 }
                 const getDetailMethod = funObj[type]
 
@@ -225,17 +193,6 @@
                 })
             },
 
-            getIDEDetail () {
-                const atomCode = this.detailCode
-
-                return this.requestIDE({ atomCode }).then((res) => {
-                    const detail = res || {}
-                    detail.detailId = res.atomId
-                    detail.name = res.atomName
-                    this.setDetail(detail)
-                })
-            },
-
             getImageDetail () {
                 const imageCode = this.detailCode
 
@@ -250,21 +207,6 @@
                     const currentCategory = categorys.find((x) => (x.categoryCode === res.category))
                     const setting = currentCategory.settings || {}
                     detail.needInstallToProject = setting.needInstallToProject
-                    this.setDetail(detail)
-                })
-            },
-
-            getServiceDetail () {
-                const serviceCode = this.detailCode
-
-                return Promise.all([
-                    this.requestService({ serviceCode }),
-                    this.requestAtomStatistic({ storeCode: serviceCode, storeType: 'SERVICE' })
-                ]).then(([serviceDetail = {}, serviceStatic = {}]) => {
-                    const detail = serviceDetail || {}
-                    detail.downloads = serviceStatic.downloads || 0
-                    detail.detailId = serviceDetail.serviceId
-                    detail.name = serviceDetail.serviceName
                     this.setDetail(detail)
                 })
             },

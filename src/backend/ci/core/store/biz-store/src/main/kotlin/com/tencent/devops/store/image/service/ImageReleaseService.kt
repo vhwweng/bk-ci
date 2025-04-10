@@ -580,26 +580,25 @@ abstract class ImageReleaseService {
                 )
             )
         } else {
-            marketImageDao.updateImageStatusById(dslContext, imageId, imageStatus, userId, "")
-//            if (imageApproveSwitch == OPEN) {
-//                marketImageDao.updateImageStatusById(dslContext, imageId, imageStatus, userId, "")
-//            } else {
-//                // 自动通过
-//                approveImage(
-//                    userId = userId,
-//                    imageId = imageId,
-//                    approveImageReq = ApproveImageReq(
-//                        imageCode = imageCode,
-//                        publicFlag = false,
-//                        recommendFlag = true,
-//                        certificationFlag = false,
-//                        rdType = ImageRDTypeEnum.THIRD_PARTY,
-//                        weight = 1,
-//                        result = PASS,
-//                        message = "ok"
-//                    )
-//                )
-//            }
+            if (imageApproveSwitch == OPEN) {
+                marketImageDao.updateImageStatusById(dslContext, imageId, imageStatus, userId, "")
+            } else {
+                // 自动通过
+                approveImage(
+                    userId = userId,
+                    imageId = imageId,
+                    approveImageReq = ApproveImageReq(
+                        imageCode = imageCode,
+                        publicFlag = false,
+                        recommendFlag = true,
+                        certificationFlag = false,
+                        rdType = ImageRDTypeEnum.THIRD_PARTY,
+                        weight = 1,
+                        result = PASS,
+                        message = "ok"
+                    )
+                )
+            }
         }
         return Result(true)
     }

@@ -1,35 +1,33 @@
 <script setup lang="ts">
-import ProjectForm from '@/components/project-form.vue';
-import http from '@/http/api';
 import {
-  RESOURCE_ACTION,
-  RESOURCE_TYPE,
-  handleProjectManageNoPermission,
-} from '@/utils/permission.js';
-import { InfoBox, Message, Popover } from 'bkui-vue';
-import {
-  onMounted,
   ref,
+  onMounted,
 } from 'vue';
-import { useI18n } from 'vue-i18n';
 import {
   useRoute,
   useRouter,
 } from 'vue-router';
+import http from '@/http/api';
+import { useI18n } from 'vue-i18n';
+import { InfoBox, Message, Popover } from 'bkui-vue';
+import ProjectForm from '@/components/project-form.vue';
+import {
+  handleProjectManageNoPermission,
+  RESOURCE_ACTION,
+  RESOURCE_TYPE,
+} from '@/utils/permission.js'
 
 const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 
 const { projectCode } = route.params;
-const projectData = ref<any>(null);
+const projectData = ref<any>({});
 const projectForm = ref(null);
 const isLoading = ref(false);
 const isChange = ref(false);
-const isToBeApproved = ref(false);
 const btnLoading = ref(false);
-const hasPermission = ref(true);
-const operationalList = ref({});
+const hasPermission = ref(true)
 const statusDisabledTips = {
   1: t('新建项目申请审批中，暂不可修改'),
   4: t('更新项目信息审批中，暂不可修改'),
@@ -100,23 +98,14 @@ const handleFormChange = (val: boolean) => {
   isChange.value = val;
 };
 
-const handleApprovedChange = (val: boolean) => {
-  isToBeApproved.value = val;
-};
-
 const infoBoxInstance = ref();
 
 const updateProject = async () => {
-  infoBoxInstance.value?.hide();
+  infoBoxInstance.value?.hide()
   btnLoading.value = true;
-  await fetchOperationalList(projectData.value.bgName);
-  await checkProductIdName({
-    id: projectData.value?.productId,
-    list: operationalList.value,
-  });
   const result = await http
     .requestUpdateProject({
-      projectId: projectData.value?.englishName,
+      projectId: projectData.value.englishName,
       projectData: projectData.value,
     })
     .catch((err) => {
@@ -125,12 +114,12 @@ const updateProject = async () => {
           action: RESOURCE_ACTION.EDIT,
           projectId: projectCode,
           resourceCode: projectCode,
-        });
+        })
       }
       Message({
         theme: 'error',
         message: err.message || err,
-      });
+      })
     })
     .finally(() => {
       btnLoading.value = false;
@@ -144,24 +133,8 @@ const updateProject = async () => {
       path: 'show',
     });
   }
-  return Promise.resolve(false);
+  return Promise.resolve(false)
 };
-
-const fetchOperationalList = async (bgName) => {
-  if (!bgName) return
-  const res = await http.getOperationalList(bgName)
-  operationalList.value = res.map(i => ({
-    ...i,
-    value: i.ProductId,
-    label: i.ProductName,
-    id: i.ProductId,
-  }));
-};
-
-const checkProductIdName = ({ id, list }) => {
-  projectData.value.productName = list.find(i => i.ProductId === id)?.ProductName || '';
-};
-
 const showNeedApprovedTips = () => {
   infoBoxInstance.value = InfoBox({
     isShow: true,
@@ -181,16 +154,12 @@ const showNeedApprovedTips = () => {
 /**
  * 更新项目
  */
-const handleUpdate = async () => {
-  if (isToBeApproved.value) {
-    showNeedApprovedTips();
-  } else {
-    if(currentDialect.value === 'CLASSIC' && projectData.value.properties.pipelineDialect === 'CONSTRAINED'){
-      isDialectDialog.value = true;
-      return
-    }
-    updateConfirm()
-  };
+const handleUpdate = () => {
+  if(currentDialect.value === 'CLASSIC' && projectData.value.properties.pipelineDialect === 'CONSTRAINED'){
+    isDialectDialog.value = true;
+    return
+  }
+  updateConfirm()
 };
 
 const updateConfirm = async () => {
@@ -218,11 +187,11 @@ const handleNoPermission = () => {
     action: RESOURCE_ACTION.VIEW,
     projectId: projectCode,
     resourceCode: projectCode,
-  });
+  })
 };
 
-onMounted(async () => {
-  await fetchProjectData();
+onMounted(() => {
+  fetchProjectData();
 });
 </script>
 
@@ -230,14 +199,13 @@ onMounted(async () => {
   <bk-loading class="edit-project-content" :loading="isLoading">
     <section class="edit-project-form" v-if="hasPermission">
       <project-form
-        v-if="!isLoading && projectData"
+        v-if="!isLoading"
         class="edit-form"
         type="edit"
         :is-change="isChange"
         :data="projectData"
         @change="handleFormChange"
-        @initProjectForm="initProjectForm"
-        @approvedChange="handleApprovedChange">
+        @initProjectForm="initProjectForm">
       </project-form>
       <div class="btn-group">
         <Popover

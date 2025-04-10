@@ -1559,10 +1559,16 @@ class PipelineRepositoryService constructor(
         var resultVersion: PipelineResourceVersion? = null
         dslContext.transaction { configuration ->
             val context = transactionContext ?: DSL.using(configuration)
-            val latestResource = getLatestResource(
-                context = context,
+
+            // 获取发布的版本用于比较差异
+            val releaseResource = pipelineResourceDao.getReleaseVersionResource(
+                dslContext = context,
                 projectId = projectId,
-                pipelineId = projectId
+                pipelineId = pipelineId
+            ) ?: throw ErrorCodeException(
+                statusCode = Response.Status.NOT_FOUND.statusCode,
+                errorCode = ProcessMessageCode.ERROR_PIPELINE_NOT_EXISTS,
+                params = arrayOf(pipelineId)
             )
             // 删除草稿并获取最新版本用于版本号计算
             pipelineResourceVersionDao.clearDraftVersion(
@@ -1570,6 +1576,12 @@ class PipelineRepositoryService constructor(
                 projectId = projectId,
                 pipelineId = pipelineId
             )
+            val latestResource = pipelineResourceVersionDao.getLatestVersionResource(
+                dslContext = context,
+                projectId = projectId,
+                pipelineId = pipelineId
+            ) ?: releaseResource
+
             // 计算版本号
             val settingVersion = (latestResource.settingVersion ?: latestResource.version) + 1
             val now = LocalDateTime.now()
@@ -1605,28 +1617,6 @@ class PipelineRepositoryService constructor(
             )
         }
         return resultVersion!!
-    }
-
-    fun getLatestResource(
-        context: DSLContext = dslContext,
-        projectId: String,
-        pipelineId: String
-    ): PipelineResourceVersion {
-        // 获取发布的版本用于比较差异
-        val releaseResource = pipelineResourceDao.getReleaseVersionResource(
-            dslContext = context,
-            projectId = projectId,
-            pipelineId = pipelineId
-        ) ?: throw ErrorCodeException(
-            statusCode = Response.Status.NOT_FOUND.statusCode,
-            errorCode = ProcessMessageCode.ERROR_PIPELINE_NOT_EXISTS,
-            params = arrayOf(pipelineId)
-        )
-        return pipelineResourceVersionDao.getLatestVersionResource(
-            dslContext = context,
-            projectId = projectId,
-            pipelineId = pipelineId
-        ) ?: releaseResource
     }
 
     private fun str2model(
@@ -2153,8 +2143,8 @@ class PipelineRepositoryService constructor(
                     transferService.transfer(
                         userId, projectId, pipelineId, TransferActionType.FULL_MODEL2YAML,
                         TransferBody(
-                            modelAndSetting = PipelineModelAndSetting(newModel, savedSetting),
-                            oldYaml = releaseResource.yaml ?: ""
+                            PipelineModelAndSetting(newModel, savedSetting),
+                            releaseResource.yaml ?: ""
                         )
                     ).yamlWithVersion
                 } catch (ignore: Throwable) {

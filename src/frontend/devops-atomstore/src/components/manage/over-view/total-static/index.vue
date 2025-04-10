@@ -51,8 +51,7 @@
             initData () {
                 this.isLoading = true
                 const methodGenerator = {
-                    atom: this.getAtomData,
-                    service: this.getServiceData
+                    atom: this.getAtomData
                 }
 
                 const currentMethod = methodGenerator[this.type]
@@ -85,19 +84,6 @@
                         { name: 'comment-num', label: this.$t('store.评论数'), value: res.commentCnt },
                         { name: 'rate', label: this.$t('store.评分'), value: res.score || '--' },
                         { name: 'icon-success-rate', label: this.$t('store.成功率'), value: ![undefined, null].includes(res.successRate) ? `${res.successRate}%` : '--', tips: this.$t('store.最近三个月内的执行成功率') }
-                    ]
-                })
-            },
-
-            getServiceData () {
-                return this.$store.dispatch('store/requestAtomStatistic', {
-                    storeCode: this.detail.serviceCode,
-                    storeType: 'SERVICE'
-                }).then((res) => {
-                    this.statisticList = [
-                        { name: 'install-num', label: this.$t('store.安装量'), value: res.downloads },
-                        { name: 'comment-num', label: this.$t('store.评论数'), value: res.commentCnt },
-                        { name: 'rate', label: this.$t('store.星级'), value: res.score || '--' }
                     ]
                 })
             }

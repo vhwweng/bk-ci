@@ -205,9 +205,7 @@ object PipelineUtils {
         param: List<BuildFormProperty>?,
         instanceFromTemplate: Boolean,
         labels: List<String>? = null,
-        defaultStageTagId: String?,
-        templateId: String? = null,
-        staticViews: List<String> = emptyList()
+        defaultStageTagId: String?
     ): Model {
         val templateTrigger = templateModel.getTriggerContainer()
         val instanceParam = if (templateTrigger.templateParams == null) {
@@ -237,9 +235,7 @@ object PipelineUtils {
             desc = "",
             stages = getFixedStages(templateModel, triggerContainer, defaultStageTagId),
             labels = labels ?: templateModel.labels,
-            instanceFromTemplate = instanceFromTemplate,
-            templateId = templateId,
-            staticViews = staticViews
+            instanceFromTemplate = instanceFromTemplate
         )
     }
 

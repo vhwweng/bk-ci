@@ -48,7 +48,6 @@ import com.tencent.devops.repository.api.ServiceOauthResource
 import com.tencent.devops.repository.api.ServiceRepositoryResource
 import com.tencent.devops.repository.api.scm.ServiceGitResource
 import com.tencent.devops.repository.api.scm.ServiceScmOauthResource
-import com.tencent.devops.repository.api.scm.ServiceScmRepositoryApiResource
 import com.tencent.devops.repository.api.scm.ServiceScmResource
 import com.tencent.devops.repository.pojo.CodeGitRepository
 import com.tencent.devops.repository.pojo.CodeGitlabRepository
@@ -59,10 +58,8 @@ import com.tencent.devops.repository.pojo.GithubCheckRuns
 import com.tencent.devops.repository.pojo.GithubCheckRunsResponse
 import com.tencent.devops.repository.pojo.GithubRepository
 import com.tencent.devops.repository.pojo.Repository
-import com.tencent.devops.repository.pojo.ScmGitRepository
 import com.tencent.devops.repository.pojo.enums.RepoAuthType
 import com.tencent.devops.repository.pojo.enums.TokenTypeEnum
-import com.tencent.devops.scm.api.enums.ScmEventType
 import com.tencent.devops.scm.code.git.CodeGitWebhookEvent
 import com.tencent.devops.scm.pojo.RepoSessionRequest
 import com.tencent.devops.scm.pojo.RevisionInfo
@@ -625,22 +622,6 @@ class ScmProxyService @Autowired constructor(private val client: Client) {
         return repo
     }
 
-    fun addScmGitWebhook(
-        projectId: String,
-        repositoryConfig: RepositoryConfig,
-        codeEventType: CodeEventType?
-    ): Repository {
-        checkRepoID(repositoryConfig)
-        val repo = getRepo(projectId, repositoryConfig) as? ScmGitRepository
-            ?: throw ErrorCodeException(defaultMessage = "ScmGit", errorCode = ProcessMessageCode.TGIT_INVALID)
-        client.get(ServiceScmRepositoryApiResource::class).registerWebhook(
-            projectId = projectId,
-            eventType = (codeEventType?.convertScmEventType() ?: ScmEventType.PUSH).value,
-            repository = repo
-        )
-        return repo
-    }
-
     private fun convertEvent(codeEventType: CodeEventType?): String? {
         return when (codeEventType) {
             null, CodeEventType.PUSH -> CodeGitWebhookEvent.PUSH_EVENTS.value
@@ -903,12 +884,4 @@ class ScmProxyService @Autowired constructor(private val client: Client) {
     fun tryGetSession(repository: Repository, credentialType: CredentialType) =
         (repository is CodeGitRepository || repository is CodeTGitRepository || repository is CodeSvnRepository) &&
                 (credentialType == CredentialType.USERNAME_PASSWORD)
-
-    private fun CodeEventType.convertScmEventType() = when (this) {
-        CodeEventType.PUSH ->  ScmEventType.PUSH
-        CodeEventType.PULL_REQUEST,CodeEventType.MERGE_REQUEST ->  ScmEventType.PULL_REQUEST
-        CodeEventType.TAG_PUSH -> ScmEventType.TAG
-        CodeEventType.ISSUES -> ScmEventType.ISSUE
-        else -> throw IllegalArgumentException("unknown code event type: $this")
-    }
 }

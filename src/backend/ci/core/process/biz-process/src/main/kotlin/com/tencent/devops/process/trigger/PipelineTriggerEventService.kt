@@ -289,7 +289,6 @@ class PipelineTriggerEventService @Autowired constructor(
             )
             eventIds to count
         }
-        logger.info("query eventIds: $eventIds")
         // 事件信息
         val triggerEvent = pipelineTriggerEventDao.listRepoTriggerEvent(
             dslContext = dslContext,

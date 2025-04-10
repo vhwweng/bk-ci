@@ -27,7 +27,6 @@
 
 package com.tencent.devops.repository.service.hub
 
-import com.tencent.devops.common.api.enums.ScmType
 import com.tencent.devops.common.api.util.PageUtil
 import com.tencent.devops.repository.pojo.AuthorizeResult
 import com.tencent.devops.repository.pojo.credential.AuthRepository
@@ -48,11 +47,9 @@ import com.tencent.devops.scm.api.pojo.auth.IScmAuth
 import com.tencent.devops.scm.api.pojo.repository.ScmProviderRepository
 import com.tencent.devops.scm.api.pojo.repository.ScmServerRepository
 import com.tencent.devops.scm.config.GitConfig
-import com.tencent.devops.scm.config.P4Config
 import com.tencent.devops.scm.spring.properties.ScmProviderProperties
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
 /**
@@ -67,17 +64,12 @@ class ScmRepositoryApiService @Autowired constructor(
     private val oauth2TokenStoreManager: Oauth2TokenStoreManager,
     private val serverRepositoryFactory: ScmServerRepositoryFactory,
     private val gitConfig: GitConfig,
-    private val repositoryOauthService: RepositoryOauthService,
-    private val p4Config: P4Config
+    private val repositoryOauthService: RepositoryOauthService
 ) : AbstractScmApiService(
     repositoryService = repositoryService,
     providerRepositoryFactory = providerRepositoryFactory,
     repositoryScmConfigService = repositoryScmConfigService
 ) {
-
-    @Value("\${scm.webhook.url:#{null}}")
-    private val webhookUrl: String = ""
-
     fun findRepository(
         projectId: String,
         authRepository: AuthRepository
@@ -157,12 +149,11 @@ class ScmRepositoryApiService @Autowired constructor(
      */
     fun createHook(
         projectId: String,
+        hookUrl: String,
         events: List<String>,
         secret: String? = null,
-        authRepository: AuthRepository,
-        scmType: ScmType
+        authRepository: AuthRepository
     ): List<Hook> {
-        val hookUrl = getHookUrl(scmType)
         return invokeApi(
             projectId = projectId,
             authRepository = authRepository
@@ -243,35 +234,6 @@ class ScmRepositoryApiService @Autowired constructor(
             page++
         } while (hooks.size == pageSize)
         return existsEvents
-    }
-
-    private fun getHookUrl(type: ScmType): String {
-        return when (type) {
-            ScmType.CODE_GIT -> {
-                gitConfig.gitHookUrl
-            }
-
-            ScmType.CODE_GITLAB -> {
-                gitConfig.gitlabHookUrl
-            }
-
-            ScmType.CODE_TGIT -> {
-                gitConfig.tGitHookUrl
-            }
-
-            ScmType.CODE_P4 -> {
-                p4Config.p4HookUrl
-            }
-
-            ScmType.SCM_GIT -> {
-                //:TODO 临时占位
-                "https://dev-api.bkdevops.qq.com/process/api/external/scm/codeGitee/commit"
-            }
-
-            else -> {
-                webhookUrl
-            }
-        }
     }
 
     companion object {

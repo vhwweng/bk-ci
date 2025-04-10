@@ -103,14 +103,7 @@
                         {{ $t('environment.nodeInfo.fetchInstallCommandTips') }}
                     </div>
                 </div>
-                <div class="handler-prompt-node">
-                    <p>{{ $t('environment.nodeInfo.connectedNodes') }}</p>
-                    <a
-                        :href="spawnNodesDescLink"
-                        target="_blank"
-                    >
-                        {{ $t('environment.nodeInfo.unableToSpawnNodes') }}</a>
-                </div>
+                <p class="handler-prompt">{{ $t('environment.nodeInfo.connectedNodes') }}</p>
                 <div class="construct-card-item connection-node-card">
                     <p
                         class="no-connection-node"
@@ -146,10 +139,10 @@
                     </div>
                 </div>
                 <p
-                    v-if="isAgent && constructImportForm.model !== 'WINDOWS'"
+                    v-if="isAgent"
                     class="target-console-tips"
                 >
-                    {{ $t('environment.nodeInfo.loginMethod') }}：ssh -p36000 root@{{ nodeIp }}
+                    {{ $t('environment.nodeInfo.loginMethod') }}：ssh -p36000 root@{{ nodeIp }} {{ $t('environment.nodeInfo.checkMails') }}！
                 </p>
             </div>
 
@@ -164,7 +157,6 @@
         <div slot="footer">
             <div class="footer-handler">
                 <bk-button
-                    key="a"
                     theme="primary"
                     :disabled="connectNodeDetail.status === 'UN_IMPORT'"
                     @click="confirmFn"
@@ -207,8 +199,7 @@
         data () {
             return {
                 defaultMachineCover: require('../../../scss/logo/machine.svg'),
-                installDocsLink: this.BKCI_DOCS.WIN_AGENT_GUIDE,
-                spawnNodesDescLink: this.BKCI_DOCS.SPAWN_NODES_DOC
+                installDocsLink: this.BKCI_DOCS.WIN_AGENT_GUIDE
             }
         },
         methods: {
@@ -235,16 +226,6 @@
         .handler-prompt {
             margin-top: 24px;
             text-align: left;
-        }
-
-        .handler-prompt-node {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 24px;
-            a {
-                cursor: pointer;
-                color: $primaryColor;
-            }
         }
 
         .construct-card-item {
@@ -291,7 +272,7 @@
         .no-connection-node {
             margin-top: 18px;
             width: 100%;
-            color: $fontLighterColor;
+            color: $fontLigtherColor;
         }
 
         .refresh-detail {
@@ -342,7 +323,7 @@
             .icon-close {
                 position: relative;
                 top: -26px;
-                color: $fontLighterColor;
+                color: $fontLigtherColor;
                 font-size: 12px;
                 cursor: pointer;
             }

@@ -1,4 +1,3 @@
-const webpack = require('webpack')
 const path = require('path')
 // const fs = require('fs')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
@@ -8,12 +7,10 @@ const CopyWebpackPlugin = require('copy-webpack-plugin')
 const BundleWebpackPlugin = require('./webpackPlugin/bundle-webpack-plugin')
 // const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
 
-module.exports = ({ entry, isConsole = false, publicPath, dist, port = 8080, argv, env }) => {
+module.exports = ({ entry, publicPath, dist, port = 8080, argv, env }) => {
     const isDev = argv.mode === 'development'
     const envDist = env && env.dist ? env.dist : 'frontend'
-    const version = env && env.version ? env.version : 'tencent'
     const buildDist = path.join(__dirname, envDist, dist)
-    console.log(path.join(__dirname, 'locale', dist), version)
     return {
         cache: {
             type: 'filesystem',
@@ -24,7 +21,7 @@ module.exports = ({ entry, isConsole = false, publicPath, dist, port = 8080, arg
         devtool: 'eval-cheap-module-source-map',
         entry,
         output: {
-            publicPath: isDev && !isConsole ? `//dev-static.devops.woa.com${publicPath}` : publicPath,
+            publicPath,
             chunkFilename: '[name].[chunkhash].js',
             filename: '[name].[contenthash].min.js',
             path: buildDist,
@@ -60,7 +57,7 @@ module.exports = ({ entry, isConsole = false, publicPath, dist, port = 8080, arg
                         : {
                             loader: MiniCssExtractPlugin.loader,
                             options: {
-                                publicPath: () => ''
+                                publicPath: (resourcePath, context) => ''
                             }
                         }, 'css-loader', 'sass-loader']
                 },
@@ -108,16 +105,12 @@ module.exports = ({ entry, isConsole = false, publicPath, dist, port = 8080, arg
                 chunkFilename: '[id].[contenthash].css',
                 ignoreOrder: true
             }),
-            new webpack.DefinePlugin({
-                VERSION_TYPE: JSON.stringify(version)
-            }),
             new CopyWebpackPlugin({
                 patterns: [
                     {
                         from: path.join(__dirname, 'locale', dist),
                         to: buildDist
-                    }
-                ],
+                    }],
                 options: {
                     concurrency: 100
                 }
@@ -186,12 +179,9 @@ module.exports = ({ entry, isConsole = false, publicPath, dist, port = 8080, arg
             client: {
                 webSocketURL: 'ws://127.0.0.1:' + port + '/ws'
             },
-            // server: {
-            //     type: 'https',
-            //     options: {
-            //         key: fs.readFileSync(path.join(__dirname, 'local.devops.woa.com.com+2-key.pem')),
-            //         cert: fs.readFileSync(path.join(__dirname, './local.devops.woa.com.com+2.pem'))
-            //     }
+            // https: {
+            //     key: fs.readFileSync(path.join(__dirname, 'localhost+2-key.pem')),
+            //     cert: fs.readFileSync(path.join(__dirname, './localhost+2.pem'))
             // },
             hot: isDev,
             port

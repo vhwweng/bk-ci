@@ -8,11 +8,7 @@ export const resourceMap = {
     envNode: 'ENVIRONMENT_ENV_NODE',
     project: 'PROJECT',
     rule: 'QUALITY_RULE',
-    ruleGroup: 'QUALITY_GROUP',
-    experience: 'EXPERIENCE',
-    experienceGroup: 'EXPERIENCE_GROUP',
-    notifyGroup: 'NOTIFY_GROUP',
-    artifactory: 'ARTIFACTORY'
+    ruleGroup: 'QUALITY_GROUP'
 }
 
 export const resourceTypeMap = {
@@ -24,11 +20,7 @@ export const resourceTypeMap = {
     ENVIRONMENT_ENV_NODE: 'env_node',
     PROJECT: 'project',
     QUALITY_RULE: 'rule',
-    QUALITY_GROUP: 'group',
-    EXPERIENCE: 'experience',
-    EXPERIENCE_GROUP: 'experienceGroup',
-    NOTIFY_GROUP: 'notifyGroup',
-    ARTIFACTORY: 'artifactory'
+    QUALITY_GROUP: 'group'
 }
 
 export const resourceAliasMap = {
@@ -40,11 +32,7 @@ export const resourceAliasMap = {
     ENVIRONMENT_ENV_NODE: 'node',
     PROJECT: 'project',
     QUALITY_RULE: 'quality',
-    QUALITY_GROUP: 'rules',
-    EXPERIENCE: 'experience',
-    EXPERIENCE_GROUP: 'experience_group',
-    NOTIFY_GROUP: 'notify_group',
-    ARTIFACTORY: 'artifactory'
+    QUALITY_GROUP: 'rules'
 }
 
 export function isProjectResource (resourceId) {

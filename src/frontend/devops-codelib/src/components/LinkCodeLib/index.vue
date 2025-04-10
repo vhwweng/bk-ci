@@ -39,14 +39,6 @@
             createCodelib: {
                 type: Function,
                 required: true
-            },
-            disabled: {
-                type: Boolean,
-                default: false
-            },
-            isBlueKing: {
-                type: Boolean,
-                default: false
             }
         },
         computed: {

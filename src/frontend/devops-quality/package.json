@@ -73,8 +73,7 @@
           "{projectRoot}"
         ],
         "outputs": [
-          "{workspaceRoot}/frontend/quality",
-          "{workspaceRoot}/frontend/entry's"
+          "{workspaceRoot}/frontend/quality"
         ]
       }
     }

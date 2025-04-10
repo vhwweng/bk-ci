@@ -28,8 +28,9 @@
 package com.tencent.devops.process.yaml
 
 import com.tencent.devops.common.pipeline.enums.BranchVersionAction
+import com.tencent.devops.process.pojo.pipeline.DeletePipelineResult
 import com.tencent.devops.process.pojo.pipeline.DeployPipelineResult
-import com.tencent.devops.process.pojo.pipeline.PipelineYamlFileInfo
+import com.tencent.devops.process.pojo.pipeline.PipelineYamlVo
 import com.tencent.devops.process.yaml.transfer.aspect.IPipelineTransferAspect
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -48,7 +49,7 @@ class PipelineYamlResourceManager @Autowired constructor(
         isDefaultBranch: Boolean,
         description: String? = null,
         aspects: LinkedList<IPipelineTransferAspect>? = null,
-        yamlFileInfo: PipelineYamlFileInfo? = null,
+        yamlInfo: PipelineYamlVo? = null,
         isTemplate: Boolean
     ): DeployPipelineResult {
         return getService(isTemplate).createYamlPipeline(
@@ -60,7 +61,7 @@ class PipelineYamlResourceManager @Autowired constructor(
             isDefaultBranch = isDefaultBranch,
             description = description,
             aspects = aspects,
-            yamlFileInfo = yamlFileInfo
+            yamlInfo = yamlInfo
         )
     }
 
@@ -74,7 +75,7 @@ class PipelineYamlResourceManager @Autowired constructor(
         isDefaultBranch: Boolean,
         description: String? = null,
         aspects: LinkedList<IPipelineTransferAspect>? = null,
-        yamlFileInfo: PipelineYamlFileInfo? = null,
+        yamlInfo: PipelineYamlVo? = null,
         isTemplate: Boolean
     ): DeployPipelineResult {
         return getService(isTemplate).updateYamlPipeline(
@@ -87,7 +88,7 @@ class PipelineYamlResourceManager @Autowired constructor(
             isDefaultBranch = isDefaultBranch,
             description = description,
             aspects = aspects,
-            yamlFileInfo = yamlFileInfo
+            yamlInfo = yamlInfo
         )
     }
 
@@ -115,7 +116,7 @@ class PipelineYamlResourceManager @Autowired constructor(
         projectId: String,
         pipelineId: String,
         isTemplate: Boolean
-    ) {
+    ): DeletePipelineResult {
         return getService(isTemplate).deletePipeline(
             userId = userId,
             projectId = projectId,

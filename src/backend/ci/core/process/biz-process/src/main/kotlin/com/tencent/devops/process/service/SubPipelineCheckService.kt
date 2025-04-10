@@ -253,6 +253,7 @@ class SubPipelineCheckService @Autowired constructor(
                     taskPipelineName = it.taskPipelineName
                 )
             }
+            logger.info("check circular dependency|subRefList[$subRefList]")
             if (subRefList.isEmpty()) {
                 return ElementCheckResult(true)
             }

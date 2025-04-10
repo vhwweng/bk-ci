@@ -1,6 +1,6 @@
 {
   "name": "devops-codelib",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "",
   "dependencies": {
     "lodash-es": "^4.17.21",
@@ -46,7 +46,7 @@
     "mini-css-extract-plugin": "2.4.2",
     "sass": "^1.42.1",
     "sass-loader": "^12.1.0",
-    "style-loader": "^3.3.1",
+    "style-loader": "^0.23.0",
     "terser-webpack-plugin": "^5.3.6",
     "vue-loader": "~15.10.0",
     "vue-style-loader": "^3.0.3",
@@ -71,8 +71,7 @@
           "{projectRoot}"
         ],
         "outputs": [
-          "{workspaceRoot}/frontend/codelib",
-          "{workspaceRoot}/frontend/entry's"
+          "{workspaceRoot}/frontend/codelib"
         ]
       }
     }

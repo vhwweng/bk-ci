@@ -98,13 +98,15 @@ import com.tencent.devops.process.pojo.template.TemplateType
 import com.tencent.devops.process.service.label.PipelineGroupService
 import com.tencent.devops.process.service.pipeline.PipelineSettingFacadeService
 import com.tencent.devops.process.service.pipeline.PipelineTransferYamlService
-import com.tencent.devops.process.service.template.v2.PipelineTemplateRelatedService
 import com.tencent.devops.process.service.view.PipelineViewGroupService
 import com.tencent.devops.process.template.service.TemplateService
-import com.tencent.devops.process.util.FileExportUtil
 import com.tencent.devops.process.yaml.PipelineYamlFacadeService
 import com.tencent.devops.process.yaml.transfer.aspect.IPipelineTransferAspect
 import com.tencent.devops.store.api.template.ServiceTemplateResource
+import java.net.URLEncoder
+import java.time.LocalDateTime
+import java.util.LinkedList
+import java.util.concurrent.TimeUnit
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
 import jakarta.ws.rs.core.StreamingOutput
@@ -115,10 +117,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.dao.DuplicateKeyException
 import org.springframework.stereotype.Service
-import java.net.URLEncoder
-import java.time.LocalDateTime
-import java.util.LinkedList
-import java.util.concurrent.TimeUnit
 
 @Suppress("ALL")
 @Service
@@ -143,8 +141,7 @@ class PipelineInfoFacadeService @Autowired constructor(
     private val yamlFacadeService: PipelineYamlFacadeService,
     private val operationLogService: PipelineOperationLogService,
     private val pipelineAuthorizationService: PipelineAuthorizationService,
-    private val pipelineAsCodeService: PipelineAsCodeService,
-    private val pipelineTemplateRelatedService: PipelineTemplateRelatedService
+    private val pipelineAsCodeService: PipelineAsCodeService
 ) {
 
     @Value("\${process.deletedPipelineStoreDays:30}")
@@ -215,16 +212,10 @@ class PipelineInfoFacadeService @Autowired constructor(
         logger.info("exportPipeline |$pipelineId | $projectId| $userId")
         return if (storageType == PipelineStorageType.YAML) {
             val suffix = PipelineStorageType.YAML.fileSuffix
-            FileExportUtil.exportStringToFile(
-                targetVersion.yaml ?: "",
-                "${settingInfo.pipelineName}$suffix"
-            )
+            exportStringToFile(targetVersion.yaml ?: "", "${settingInfo.pipelineName}$suffix")
         } else {
             val suffix = PipelineStorageType.MODEL.fileSuffix
-            FileExportUtil.exportStringToFile(
-                JsonUtil.toSortJson(modelAndSetting),
-                "${settingInfo.pipelineName}$suffix"
-            )
+            exportStringToFile(JsonUtil.toSortJson(modelAndSetting), "${settingInfo.pipelineName}$suffix")
         }
     }
 
@@ -268,6 +259,22 @@ class PipelineInfoFacadeService @Autowired constructor(
             channelCode = ChannelCode.BS,
             checkPermission = true
         ).pipelineId
+    }
+
+    private fun exportStringToFile(content: String, fileName: String): Response {
+        // 流式下载
+        val fileStream = StreamingOutput { output ->
+            val sb = StringBuilder()
+            sb.append(content)
+            output.write(sb.toString().toByteArray())
+            output.flush()
+        }
+        val encodeName = URLEncoder.encode(fileName, "UTF-8")
+        return Response
+            .ok(fileStream, MediaType.APPLICATION_OCTET_STREAM_TYPE)
+            .header("content-disposition", "attachment; filename = $encodeName")
+            .header("Cache-Control", "no-cache")
+            .build()
     }
 
     fun getPipelineNameVersion(projectId: String, pipelineId: String): Pair<String, Int> {
@@ -448,7 +455,7 @@ class PipelineInfoFacadeService @Autowired constructor(
                 // 先进行模板关联操作
                 if (templateId != null) {
                     watcher.start("createTemplate")
-                    pipelineTemplateRelatedService.createRelation(
+                    templateService.createRelationBtwTemplate(
                         userId = userId,
                         projectId = projectId,
                         templateId = templateId,

@@ -105,11 +105,11 @@ import com.tencent.devops.process.pojo.template.OptionalTemplateList
 import com.tencent.devops.process.pojo.template.SaveAsTemplateReq
 import com.tencent.devops.process.pojo.template.TemplateCompareModel
 import com.tencent.devops.process.pojo.template.TemplateCompareModelResult
+import com.tencent.devops.process.pojo.template.TemplateInstanceBaseStatus
 import com.tencent.devops.process.pojo.template.TemplateInstanceCreate
 import com.tencent.devops.process.pojo.template.TemplateInstanceItemStatus
 import com.tencent.devops.process.pojo.template.TemplateInstancePage
 import com.tencent.devops.process.pojo.template.TemplateInstanceParams
-import com.tencent.devops.process.pojo.template.TemplateInstanceStatus
 import com.tencent.devops.process.pojo.template.TemplateInstanceUpdate
 import com.tencent.devops.process.pojo.template.TemplateListModel
 import com.tencent.devops.process.pojo.template.TemplateModel
@@ -138,8 +138,6 @@ import com.tencent.devops.store.api.common.ServiceStoreResource
 import com.tencent.devops.store.api.template.ServiceTemplateResource
 import com.tencent.devops.store.pojo.atom.AtomCodeVersionReqItem
 import com.tencent.devops.store.pojo.common.enums.StoreTypeEnum
-import jakarta.ws.rs.NotFoundException
-import jakarta.ws.rs.core.Response
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.jooq.Result
@@ -152,6 +150,8 @@ import org.springframework.dao.DuplicateKeyException
 import org.springframework.stereotype.Service
 import java.text.MessageFormat
 import java.time.LocalDateTime
+import jakarta.ws.rs.NotFoundException
+import jakarta.ws.rs.core.Response
 
 @Suppress("ALL")
 @Service
@@ -903,8 +903,8 @@ class TemplateFacadeService @Autowired constructor(
         )
     }
 
-    fun getSrcTemplateCodes(projectId: String): List<String> {
-        return templateDao.getSrcTemplateCodes(dslContext, projectId)
+    fun getSrcTemplateCodes(projectId: String): com.tencent.devops.common.api.pojo.Result<List<String>> {
+        return com.tencent.devops.common.api.pojo.Result(templateDao.getSrcTemplateCodes(dslContext, projectId))
     }
 
     /**
@@ -1352,7 +1352,7 @@ class TemplateFacadeService @Autowired constructor(
         return latestVersion
     }
 
-    fun listTemplateVersions(projectId: String, templateId: String): List<TemplateVersion> {
+    private fun listTemplateVersions(projectId: String, templateId: String): List<TemplateVersion> {
         val versionInfos = templateDao.getTemplateVersionInfos(dslContext, projectId, templateId)
         val tTemplate = TTemplate.T_TEMPLATE
         val versions = mutableListOf<TemplateVersion>()
@@ -2006,7 +2006,7 @@ class TemplateFacadeService @Autowired constructor(
                     useTemplateSettingsFlag = useTemplateSettings,
                     projectId = projectId,
                     totalItemNum = instances.size,
-                    status = TemplateInstanceStatus.INIT.name,
+                    status = TemplateInstanceBaseStatus.INIT.name,
                     userId = userId
                 )
                 templateInstanceItemDao.createTemplateInstanceItem(
@@ -2464,7 +2464,7 @@ class TemplateFacadeService @Autowired constructor(
         userId: String,
         projectId: String,
         addMarketTemplateRequest: MarketTemplateRequest
-    ): Map<String, String> {
+    ): com.tencent.devops.common.api.pojo.Result<Map<String, String>> {
         logger.info("the userId is:$userId,addMarketTemplateRequest is:$addMarketTemplateRequest")
         val templateCode = addMarketTemplateRequest.templateCode
         val publicFlag = addMarketTemplateRequest.publicFlag // 是否为公共模板
@@ -2530,14 +2530,14 @@ class TemplateFacadeService @Autowired constructor(
             )
             projectTemplateMap[projectId] = templateId
         }
-        return projectTemplateMap
+        return com.tencent.devops.common.api.pojo.Result(projectTemplateMap)
     }
 
     fun updateMarketTemplateReference(
         userId: String,
         projectId: String,
         updateMarketTemplateRequest: MarketTemplateRequest
-    ): Boolean {
+    ): com.tencent.devops.common.api.pojo.Result<Boolean> {
         logger.info("the userId is:$userId,updateMarketTemplateReference Request is:$updateMarketTemplateRequest")
         val templateCode = updateMarketTemplateRequest.templateCode
         val category = JsonUtil.toJson(updateMarketTemplateRequest.categoryCodeList ?: listOf<String>(), false)
@@ -2552,7 +2552,7 @@ class TemplateFacadeService @Autowired constructor(
                 logoUrl = updateMarketTemplateRequest.logoUrl
             )
         }
-        return true
+        return com.tencent.devops.common.api.pojo.Result(true)
     }
 
     fun updateTemplateStoreFlag(
@@ -2560,7 +2560,7 @@ class TemplateFacadeService @Autowired constructor(
         projectId: String,
         templateId: String,
         storeFlag: Boolean
-    ): Boolean {
+    ): com.tencent.devops.common.api.pojo.Result<Boolean> {
         templateDao.updateStoreFlag(
             dslContext = dslContext,
             userId = userId,
@@ -2568,7 +2568,7 @@ class TemplateFacadeService @Autowired constructor(
             templateId = templateId,
             storeFlag = storeFlag
         )
-        return true
+        return com.tencent.devops.common.api.pojo.Result(true)
     }
 
     fun addRemoteAuth(model: Model, projectId: String, pipelineId: String, userId: String) {

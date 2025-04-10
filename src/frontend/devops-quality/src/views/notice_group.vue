@@ -154,10 +154,10 @@
 
 <script>
     import createGroup from '@/components/devops/create_group'
-    import { QUALITY_GROUP_RESOURCE_ACTION, QUALITY_GROUP_RESOURCE_TYPE } from '@/utils/permission.js'
     import { getQueryString } from '@/utils/util'
-    import { mapGetters } from 'vuex'
+    import { QUALITY_GROUP_RESOURCE_ACTION, QUALITY_GROUP_RESOURCE_TYPE } from '@/utils/permission.js'
     import emptyData from './empty_data'
+    import { mapGetters } from 'vuex'
 
     export default {
         components: {
@@ -196,14 +196,14 @@
                     nameError: false
                 },
                 emptyInfo: {
+                    title: this.$t('quality.暂无通知组'),
+                    desc: this.$t('quality.您可以新增一个通知组'),
                     permissionData: {
                         projectId: projectId,
                         resourceType: QUALITY_GROUP_RESOURCE_TYPE,
                         resourceCode: projectId,
                         action: QUALITY_GROUP_RESOURCE_ACTION.CREATE
                     },
-                    title: this.$t('quality.暂无通知组'),
-                    desc: this.$t('quality.您可以新增一个通知组'),
                     btnText: this.$t('quality.新增通知组')
                 },
                 urlParams: getQueryString('groupId') || ''
@@ -215,10 +215,7 @@
             },
             ...mapGetters('quality', [
                 'getUserGroup'
-            ]),
-            isExtendTx () {
-                return VERSION_TYPE === 'tencent'
-            }
+            ])
         },
         watch: {
             projectId () {

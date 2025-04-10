@@ -1,4 +1,3 @@
-import { getCurrentInstance } from 'vue'
 import { Store } from 'vuex'
 import { transformObj } from '../utils/util'
 import actions from './actions'
@@ -6,8 +5,8 @@ import {
     EMPTY_PROJECT
 } from './constants'
 import getters from './getters'
-import platFormConfig from './modules/platform-config'
 import mutations from './mutations'
+import platFormConfig from './modules/platform-config'
 
 const allServices: ObjectMap[] = window.allServices
 const projectList: ObjectMap[] = window.projectList
@@ -17,15 +16,6 @@ const modules:ObjectMap = {}
 for (const key in window.Pages) {
     modules[key] = window.Pages[key].store
 }
-
-export function useStore (): Store<RootState> {
-    const vm = getCurrentInstance()
-    if (!vm) {
-        throw new Error('useStore must be called within a setup function')
-    }
-    return vm.proxy.$store
-}
-
 export default new Store<RootState>({
     modules: {
         ...modules,
@@ -36,7 +26,6 @@ export default new Store<RootState>({
     getters,
     state: {
         isPermissionDialogShow: false,
-        hookMap: {},
         projectList,
         fetchError: null,
         moduleLoading: false,
@@ -57,9 +46,6 @@ export default new Store<RootState>({
             showNav: true
         },
         showNotice: false,
-        currentNotice: {},
-        isShowNonDisclosureAgreement: false,
-        nonDisclosureAgreementConfig: null,
-        cancelDisclosureHandler: null
+        currentNotice: {}
     }
 })

@@ -29,7 +29,7 @@ module.exports = (env, argv) => {
         ],
         output: {
             path: path.join(__dirname, './src/assets/static'),
-            filename: '[name].[contenthash].dll.js',
+            filename: '[name].dll.js',
             library: 'lib'
         },
         module: {

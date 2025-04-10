@@ -1,54 +1,12 @@
 <template>
     <div class="node-list-wrapper">
         <content-header class="env-header">
-            <div slot="left">
-                <span>{{ $t('environment.node') }}</span>
-                <span
-                    v-if="isEnableDashboard"
-                    class="dashboard-entry ml5"
-                >
-                    <i class="devops-icon icon-tiaozhuan jump-icon"></i>
-                    <a
-                        :href="jumpDashboardUrl"
-                        target="_blank"
-                    >{{ $t('environment.查看构建机监控') }}</a>
-                </span>
-            </div>
-            <div slot="right">
-                <template v-if="isExtendTx">
-                    <bk-button
-                        v-perm="{
-                            permissionData: {
-                                projectId: projectId,
-                                resourceType: NODE_RESOURCE_TYPE,
-                                resourceCode: projectId,
-                                action: NODE_RESOURCE_ACTION.CREATE
-                            }
-                        }"
-                        theme="primary"
-                        @click="toImportNode('cmdb')"
-                        key="idcTestMachine"
-                    >
-                        {{ $t('environment.nodeInfo.idcTestMachine') }}
-                    </bk-button>
-                    <bk-button
-                        v-perm="{
-                            permissionData: {
-                                projectId: projectId,
-                                resourceType: NODE_RESOURCE_TYPE,
-                                resourceCode: projectId,
-                                action: NODE_RESOURCE_ACTION.CREATE
-                            }
-                        }"
-                        theme="primary"
-                        @click="toImportNode('construct')"
-                        key="thirdPartyBuildMachine"
-                    >
-                        {{ $t('environment.thirdPartyBuildMachine') }}
-                    </bk-button>
-                </template>
+            <div slot="left">{{ $t('environment.node') }}</div>
+            <div
+                slot="right"
+                v-if="nodeList.length > 0"
+            >
                 <bk-button
-                    v-else
                     v-perm="{
                         permissionData: {
                             projectId: projectId,
@@ -112,7 +70,6 @@
                         sortable="custom"
                         prop="displayName"
                         min-width="160"
-                        :show-overflow-tooltip="!isEditNodeStatus"
                     >
                         <template slot-scope="props">
                             <div
@@ -157,11 +114,7 @@
                                         }
                                     } : {}"
                                     class="node-name"
-                                    :class="{
-                                        'pointer': canShowDetail(props.row),
-                                        'useless': !canShowDetail(props.row) || !props.row.canUse,
-                                        'unavailable': removedStatus.includes(props.row.nodeStatus)
-                                    }"
+                                    :class="{ 'pointer': canShowDetail(props.row), 'useless': !canShowDetail(props.row) || !props.row.canUse }"
                                     :title="props.row.displayName"
                                     @click="toNodeDetail(props.row)"
                                 >
@@ -190,8 +143,8 @@
                     </bk-table-column>
                     <bk-table-column
                         label="IP"
-                        prop="nodeIp"
                         sortable="custom"
+                        prop="nodeIp"
                         min-width="120"
                         show-overflow-tooltip
                     >
@@ -201,11 +154,10 @@
                     </bk-table-column>
                     <bk-table-column
                         v-if="allRenderColumnMap.os"
-                        :label="$t('environment.nodeInfo.os')"
                         sortable="custom"
+                        :label="$t('environment.nodeInfo.os')"
                         min-width="120"
                         prop="osName"
-                        show-overflow-tooltip
                     >
                         <template slot-scope="props">
                             {{ props.row.osName || '-' }}
@@ -215,74 +167,63 @@
                         v-if="allRenderColumnMap.nodeStatus"
                         :label="`${$t('environment.status')}(${$t('environment.version')})`"
                         sortable="custom"
+                        width="180"
                         prop="nodeStatus"
-                        :width="180"
-                        show-overflow-tooltip
                     >
                         <template slot-scope="props">
+                            <div
+                                class="table-node-item node-item-status"
+                                v-if="props.row.nodeStatus === 'BUILDING_IMAGE'"
+                            >
+                                <span class="node-status-icon normal-stutus-icon"></span>
+                                <span class="node-status">{{ $t('environment.nodeInfo.normal') }}</span>
+                            </div>
                             <div class="table-node-item node-item-status">
-                                <!-- 责任人已变更 -->
-                                <template
-                                    v-if="((props.row.nodeType === 'CC' && props.row.createdUser !== props.row.operator && props.row.createdUser !== props.row.bakOperator)
-                                        || (props.row.nodeType === 'CMDB' && props.row.createdUser !== props.row.operator && props.row.bakOperator?.split(';').indexOf(props.row.createdUser) === -1))"
+                                <!-- 状态icon -->
+                                <span
+                                    class="node-status-icon normal-stutus-icon"
+                                    v-if="successStatus.includes(props.row.nodeStatus)"
+                                ></span>
+                                <span
+                                    class="node-status-icon abnormal-stutus-icon"
+                                    v-if="failStatus.includes(props.row.nodeStatus)"
                                 >
-                                    <span class="prompt-operator">
-                                        <i class="devops-icon icon-exclamation-circle"></i>
-                                        {{ $t('environment.nodeInfo.prohibited') }}
-                                    </span>
-                                </template>
-                                <!-- 已从 CMDB 、蓝鲸CC 移除 -->
-                                <template v-else-if="removedStatus.includes(props.row.nodeStatus) && deploymentNodes.includes(props.row.nodeType)">
-                                    <i class="bk-icon node-removed-icon icon-close error"></i>
-                                    <span class="node-removed-message">
-                                        {{ removedMessage[props.row.nodeStatus] }}
-                                    </span>
-                                </template>
-                                <template v-else>
-                                    <!-- 状态icon -->
-                                    <StatusIcon
-                                        v-if="successStatus.includes(props.row.nodeStatus)"
-                                        status="success"
+                                </span>
+                                <span
+                                    v-if="runningStatus.includes(props.row.nodeStatus)"
+                                    class="loading-icon"
+                                >
+                                    <bk-loading
+                                        theme="primary"
+                                        mode="spin"
+                                        size="mini"
+                                        is-loading
                                     />
-                                    <StatusIcon
-                                        v-else-if="failStatus.includes(props.row.nodeStatus)"
-                                        status="error"
-                                    />
-                                    <StatusIcon
-                                        v-else-if="['NOT_INSTALLED'].includes(props.row.nodeStatus)"
-                                        status="normal"
-                                    />
-                                    <span
-                                        v-else-if="runningStatus.includes(props.row.nodeStatus)"
-                                        class="loading-icon"
-                                    >
-                                        <bk-loading
-                                            theme="primary"
-                                            mode="spin"
-                                            size="mini"
-                                            is-loading
-                                        />
-                                    </span>
-                                    <!-- 状态值 -->
-                                    <span class="node-status">
-                                        {{ $t('environment.nodeStatusMap')[props.row.nodeStatus] }}
-                                        <span v-if="props.row.agentVersion">
-                                            ({{ props.row.agentVersion }})
-                                        </span>
-                                        <span
-                                            v-if="props.row.nodeStatus === 'RUNNING'"
-                                            v-bk-tooltips="$t('environment.查看日志')"
-                                            class="log-icon-box"
-                                            @click="handleShowLogDetail(props.row)"
-                                        >
-                                            <Icon
-                                                class="log-icon"
-                                                name="log"
-                                                size="16"
-                                            />
-                                        </span>
-                                    </span>
-                                </template>
+                                </span>
+                                <!-- 状态值 -->
+                                <span
+                                    class="install-agent"
+                                    v-if="props.row.nodeStatus === 'RUNNING'"
+                                    @click="installAgent(props.row)"
+                                >
+                                    {{ $t('environment.nodeStatusMap')[props.row.nodeStatus] }}
+                                </span>
+                                <span
+                                    class="node-status"
+                                    v-else
+                                >
+                                    {{ $t('environment.nodeStatusMap')[props.row.nodeStatus] || props.row.nodeStatus }}
+                                </span>
+                                <div
+                                    class="install-agent"
+                                    v-if="['THIRDPARTY'].includes(props.row.nodeType) && props.row.nodeStatus === 'ABNORMAL'"
+                                    @click="installAgent(props.row)"
+                                >
+                                    {{ `（${$t('environment.install')}Agent）` }}
+                                </div>
+                                <span v-if="props.row.agentVersion">
+                                    ({{ props.row.agentVersion }})
+                                </span>
                             </div>
                         </template>
                     </bk-table-column>
@@ -308,7 +249,7 @@
                     ></bk-table-column>
                     <bk-table-column
                         v-if="allRenderColumnMap.lastModifyBy"
-                        :label="$t('environment.nodeInfo.lastModifyBy')"
+                        :label="$t('environment.lastModifier')"
                         sortable="custom"
                         prop="lastModifiedUser"
                         min-width="120"
@@ -318,8 +259,8 @@
                         v-if="allRenderColumnMap.lastModifyTime"
                         :label="$t('environment.nodeInfo.lastModifyTime')"
                         :width="180"
-                        prop="lastModifiedTime"
                         sortable="custom"
+                        prop="lastModifiedTime"
                         min-width="80"
                         show-overflow-tooltip
                     >
@@ -364,119 +305,9 @@
                     >
                         <template slot-scope="props">
                             <template v-if="props.row.canUse">
-                                <!-- 用途为部署的节点-操作按钮 -->
-                                <div class="table-node-item">
-                                    <template v-if="deploymentNodes.includes(props.row.nodeType)">
-                                        <span
-                                            v-bk-tooltips="{
-                                                content: $t('environment.主机负责人已变更，请联系主机负责人重新授权使用'),
-                                                disabled: userInfo.username === props.row.operator || userInfo.username === props.row.bakOperator
-                                            }"
-                                        >
-                                            <bk-button
-                                                v-if="((props.row.nodeType === 'CC' && props.row.createdUser !== props.row.operator && props.row.createdUser !== props.row.bakOperator)
-                                                    || (props.row.nodeType === 'CMDB' && props.row.createdUser !== props.row.operator && props.row.bakOperator?.split(';').indexOf(props.row.createdUser) === -1))"
-                                                class="mr5"
-                                                :disabled="!(userInfo.username === props.row.operator || userInfo.username === props.row.bakOperator)"
-                                                text
-                                                @click="changeCreatedUser(props.row)"
-                                            >
-                                                {{ $t('environment.重新授权') }}
-                                            </bk-button>
-                                        </span>
-                                        <!-- CC中不存在 - 重新导入 -->
-                                        <span
-                                            v-bk-tooltips="{
-                                                content: $t('environment.你不是主机负责人，请联系主机负责人重新导入使用'),
-                                                disabled: userInfo.username === props.row.operator || userInfo.username === props.row.bakOperator
-                                            }"
-                                        >
-                                            <bk-button
-                                                v-if="['NOT_IN_CC'].includes(props.row.nodeStatus)"
-                                                class="mr5"
-                                                text
-                                                v-perm="{
-                                                    hasPermission: props.row.canEdit,
-                                                    disablePermissionApi: true,
-                                                    permissionData: {
-                                                        projectId: projectId,
-                                                        resourceType: NODE_RESOURCE_TYPE,
-                                                        resourceCode: props.row.nodeHashId,
-                                                        action: NODE_RESOURCE_ACTION.EDIT
-                                                    }
-                                                }"
-                                                :disabled="!(userInfo.username === props.row.operator || userInfo.username === props.row.bakOperator)"
-                                                @click="handleReImport(props.row)"
-                                            >
-                                                {{ $t('environment.reImport') }}
-                                            </bk-button>
-                                        </span>
-                                        <!-- 重装Agent -->
-                                        <bk-button
-                                            v-if="props.row.nodeStatus === 'ABNORMAL' || (props.row.nodeStatus === 'RUNNING' && props.row.agentStatus === 1)"
-                                            v-perm="{
-                                                hasPermission: props.row.canEdit,
-                                                disablePermissionApi: true,
-                                                permissionData: {
-                                                    projectId: projectId,
-                                                    resourceType: NODE_RESOURCE_TYPE,
-                                                    resourceCode: props.row.nodeHashId,
-                                                    action: NODE_RESOURCE_ACTION.EDIT
-                                                }
-                                            }"
-                                            :disable="props.row.nodeStatus === 'RUNNING'"
-                                            text
-                                            class="mr5"
-                                            @click="installAgent(props.row)"
-                                        >
-                                            {{ $t('environment.reinstallAgent') }}
-                                        </bk-button>
-                                        <!-- 未安装Agent -->
-                                        <bk-button
-                                            v-if="props.row.nodeStatus === 'NOT_INSTALLED' || (props.row.nodeStatus === 'RUNNING' && props.row.agentStatus === 0)"
-                                            v-perm="{
-                                                hasPermission: props.row.canEdit,
-                                                disablePermissionApi: true,
-                                                permissionData: {
-                                                    projectId: projectId,
-                                                    resourceType: NODE_RESOURCE_TYPE,
-                                                    resourceCode: props.row.nodeHashId,
-                                                    action: NODE_RESOURCE_ACTION.EDIT
-                                                }
-                                            }"
-                                            :disable="props.row.nodeStatus === 'RUNNING'"
-                                            text
-                                            class="mr5"
-                                            @click="installAgent(props.row)"
-                                        >
-                                            {{ $t('environment.installAgent') }}
-                                        </bk-button>
-                                    </template>
-                                    <!-- 用途为构建的节点-操作按钮 -->
-                                    <template v-else>
-                                        <!-- Agent异常 - 重装Agent -->
-                                        <bk-button
-                                            v-if="props.row.nodeStatus === 'ABNORMAL'"
-                                            v-perm="{
-                                                hasPermission: props.row.canEdit,
-                                                disablePermissionApi: true,
-                                                permissionData: {
-                                                    projectId: projectId,
-                                                    resourceType: NODE_RESOURCE_TYPE,
-                                                    resourceCode: props.row.nodeHashId,
-                                                    action: NODE_RESOURCE_ACTION.EDIT
-                                                }
-                                            }"
-                                            text
-                                            class="mr5"
-                                            @click="installAgent(props.row)"
-                                        >
-                                            {{ $t('environment.reinstallAgent') }}
-                                        </bk-button>
-                                    </template>
-                                    <bk-button
+                                <div class="table-node-item node-item-handler">
+                                    <span
                                         v-if="!['TSTACK'].includes(props.row.nodeType)"
-                                        text
                                         v-perm="{
                                             hasPermission: props.row.canDelete,
                                             disablePermissionApi: true,
@@ -487,34 +318,10 @@
                                                 action: NODE_RESOURCE_ACTION.DELETE
                                             }
                                         }"
-                                        :disable="props.row.nodeStatus === 'RUNNING'"
-                                        class="mr5"
+                                        class="node-handle delete-node-text"
                                         @click.stop="confirmDelete(props.row, index)"
                                     >
                                         {{ $t('environment.delete') }}
-                                    </bk-button>
-                                    <span
-                                        id="moreHandler"
-                                        class="node-handle more-handle"
-                                        v-if="props.row.canUse && props.row.nodeType === 'DEVCLOUD'"
-                                    >
-                                        <bk-popover
-                                            placement="bottom-start"
-                                            size="samll"
-                                            theme="light"
-                                        >
-                                            <span>{{ $t('environment.more') }}</span>
-                                            <div
-                                                slot="content"
-                                                class="devcloud-menu-list"
-                                            >
-                                                <dropdown-list
-                                                    :is-show="showTooltip"
-                                                    @handleNode="handleNode"
-                                                    :node="props.row"
-                                                ></dropdown-list>
-                                            </div>
-                                        </bk-popover>
                                     </span>
                                 </div>
                             </template>
@@ -547,15 +354,6 @@
                 </bk-table>
             </template>
         </section>
-
-        <!-- 导入CMDB -->
-        <config-manage-node
-            :node-select-conf="cmdbNodeSelectConf"
-            @confirm-fn="confirmCmdbFn"
-            @cancel-fn="cancelCmdbFn"
-        ></config-manage-node>
-
-        <!-- 导入第三方构建机 -->
         <third-construct
             :construct-tool-conf="constructToolConf"
             :construct-import-form="constructImportForm"
@@ -570,60 +368,24 @@
             :is-agent="isAgent"
             :node-ip="nodeIp"
         ></third-construct>
-
-        <make-mirror-dialog
-            :current-node="createImageNode"
-            :make-mirror-conf="makeMirrorConf"
-            @cancelMakeMirror="makeMirrorConf.isShow = false"
-            @submitMakeMirror="requestList"
-        ></make-mirror-dialog>
-
-        <!-- 导入成功、失败提示弹框 -->
-        <import-tips-dialog
-            ref="importTipsDialog"
-            :status="importStatus"
-            :message="importMessage"
-            :agent-abnormal-nodes-count="agentAbnormalNodesCount"
-            :agent-not-install-nodes-count="agentNotInstallNodesCount"
-        />
-
-        <!-- 重装/安装Agent -->
-        <installAgent
-            ref="installAgent"
-            v-bind="curNode"
-            :task-id.sync="taskId"
-            @install="handleInstallEnd"
-        />
     </div>
 </template>
 
 <script>
-    import configManageNode from '@/components/devops/environment/config-manage-node'
-    import dropdownList from '@/components/devops/environment/dropdown-list'
-    import importTipsDialog from '@/components/devops/environment/import-tips-dialog'
-    import installAgent from '@/components/devops/environment/install-agent'
-    import makeMirrorDialog from '@/components/devops/environment/make-mirror-dialog'
     import thirdConstruct from '@/components/devops/environment/third-construct-dialog'
-    import EmptyTableStatus from '@/components/empty-table-status.vue'
-    import StatusIcon from '@/components/status-icon.vue'
-    import { NODE_RESOURCE_ACTION, NODE_RESOURCE_TYPE } from '@/utils/permission'
     import { getQueryString } from '@/utils/util'
+    import webSocketMessage from '../utils/webSocketMessage.js'
+    import { NODE_RESOURCE_ACTION, NODE_RESOURCE_TYPE } from '@/utils/permission'
+    import EmptyTableStatus from '@/components/empty-table-status'
     import SearchSelect from '@blueking/search-select'
     import '@blueking/search-select/dist/styles/index.css'
-    import webSocketMessage from '../utils/webSocketMessage.js'
     const NODE_TABLE_COLUMN_CACHE = 'node_list_columns'
     const ENV_NODE_TABLE_LIMIT_CACHE = 'env_node_table_limit_cache'
     export default {
         components: {
             thirdConstruct,
-            configManageNode,
-            dropdownList,
-            makeMirrorDialog,
-            importTipsDialog,
-            StatusIcon,
-            installAgent,
-            EmptyTableStatus,
-            SearchSelect
+            SearchSelect,
+            EmptyTableStatus
         },
         data () {
             return {
@@ -631,26 +393,21 @@
                 NODE_RESOURCE_ACTION,
                 curEditNodeItem: '',
                 curEditNodeDisplayName: '',
-                createImageNode: '',
                 nodeIp: '',
                 isAgent: false,
                 isMultipleBtn: false,
                 isEditNodeStatus: false,
+                isDropdownShow: false, // 导入菜单
+                showContent: false, // 内容显示
                 hasPermission: true, // 构建机权限
                 showTooltip: false,
                 curNodeDialog: '', // 当前弹窗节点
                 lastCliCKNode: {},
                 nodeList: [], // 节点列表
-                allNodeList: [],
                 gatewayList: [], // 网关列表
-                runningStatus: ['CREATING', 'RUNNING', 'STARTING', 'STOPPING', 'RESTARTING', 'DELETING', 'BUILDING_IMAGE'],
+                runningStatus: ['CREATING', 'STARTING', 'STOPPING', 'RESTARTING', 'DELETING', 'BUILDING_IMAGE'],
                 successStatus: ['NORMAL', 'BUILD_IMAGE_SUCCESS'],
-                failStatus: ['ABNORMAL', 'DELETED', 'LOST', 'BUILD_IMAGE_FAILED', 'UNKNOWN'],
-                removedStatus: ['NOT_IN_CC', 'NOT_IN_CMDB'],
-                removedMessage: {
-                    NOT_IN_CMDB: this.$t('environment.节点已从CMDB移除，不可使用'),
-                    NOT_IN_CC: this.$t('environment.节点已从蓝鲸CC移除，不可使用')
-                },
+                failStatus: ['ABNORMAL', 'DELETED', 'LOST', 'BUILD_IMAGE_FAILED', 'UNKNOWN', 'RUNNING'],
                 tableLoading: false,
                 // 页面loading
                 loading: {
@@ -686,14 +443,6 @@
                     status: 'UN_IMPORT',
                     os: 'macOS 10.13.4'
                 },
-                // CMDB弹窗配置
-                cmdbNodeSelectConf: {
-                    isShow: false,
-                    quickClose: false,
-                    hasHeader: false,
-                    unselected: true,
-                    importText: '导入'
-                },
                 makeMirrorConf: {
                     isShow: false
                 },
@@ -716,15 +465,9 @@
                         }
                     ]
                 },
-                isEnableDashboard: false,
-                bizId: 0,
                 selectedTableColumn: [],
                 tableSize: 'small',
                 searchValue: [],
-                importStatus: 'success',
-                importMessage: '',
-                agentAbnormalNodesCount: 0,
-                agentNotInstallNodesCount: 0,
                 pagination: {
                     current: 1,
                     count: 0,
@@ -732,15 +475,7 @@
                     limitList: [10, 50, 100, 200]
                 },
                 requestParams: {},
-                dateTimeRange: [],
-                buildNodes: ['DEVCLOUD', 'THIRDPARTY'], // Build 构建用途的节点 - 第三方构建机类型
-                deploymentNodes: ['CC', 'CMDB', 'UNKNOWN', 'OTHER'], // deployment 部署用途的节点
-                curNode: {},
-                installAgentIp: '',
-                installHostId: 0,
-                installOsType: '',
-                isDeleteIng: false,
-                taskId: 0 // 查询安装日志 -> 安装Agent任务Id
+                dateTimeRange: []
             }
         },
         computed: {
@@ -840,7 +575,6 @@
                     return !this.searchValue.find(val => val.id === data.id)
                 })
             },
-            
             filterPlaceHolder () {
                 return this.filterData.map(item => item.name).join(' / ')
             },
@@ -853,9 +587,6 @@
                     UNKNOWN: this.$t('environment.部署'),
                     OTHER: this.$t('environment.部署')
                 }
-            },
-            jumpDashboardUrl () {
-                return `https://bkm.woa.com/?bizId=${this.bizId}#/grafana/d/bT8qy3NVa`
             }
         },
         watch: {
@@ -935,6 +666,7 @@
                     id: 'latestBuildTime',
                     label: this.$t('environment.nodeInfo.lastRunAs')
                 }
+
             ]
             const columnsCache = JSON.parse(localStorage.getItem(NODE_TABLE_COLUMN_CACHE))
             if (columnsCache) {
@@ -960,13 +692,11 @@
                 this.constructImportForm.model = urlParams
                 this.toImportNode('construct')
             }
-
             webSocketMessage.installWsMessage(this.requestList)
             this.$once('hook:beforeDestroy', webSocketMessage.unInstallWsMessage)
         },
         async mounted () {
             await this.init()
-            await this.getEnableDashboard()
         },
         methods: {
             async init () {
@@ -1004,10 +734,12 @@
                             pageSize: this.pagination.limit
                         }
                     })
+
                     this.pagination.count = res.count
                     this.nodeList = res.records.map(i => {
                         return {
                             isEnableEdit: i.nodeHashId === this.curEditNodeItem,
+                            isMore: i.nodeHashId === this.lastCliCKNode.nodeHashId,
                             ...i
                         }
                     })
@@ -1023,19 +755,6 @@
                     this.tableLoading = false
                 }
             },
-            async getEnableDashboard () {
-                try {
-                    const res = await this.$store.dispatch('environment/checkEnableDashboard', {
-                        projectId: this.projectId
-                    })
-                    if (res) {
-                        this.isEnableDashboard = res.result
-                        this.bizId = res.bizId
-                    }
-                } catch (e) {
-                    console.err(e)
-                }
-            },
             changeProject () {
                 this.$toggleProjectMenu(true)
             },
@@ -1047,13 +766,19 @@
                     action: NODE_RESOURCE_ACTION.CREATE
                 })
             },
+            dropdownIsShow (isShow) {
+                if (isShow === 'show') {
+                    this.isDropdownShow = true
+                } else {
+                    this.isDropdownShow = false
+                }
+            },
             toNodeDetail (node) {
                 if (this.canShowDetail(node)) {
                     this.$router.push({
                         name: 'nodeDetail',
                         params: {
-                            nodeHashId: node.nodeHashId,
-                            enableDashboard: this.enableDashboard
+                            nodeHashId: node.nodeHashId
                         }
                     })
                 }
@@ -1079,13 +804,10 @@
                     theme: 'warning',
                     type: 'warning',
                     title: this.$t('environment.delete'),
-                    confirmLoading: true,
                     subTitle: `${this.$t('environment.nodeInfo.deleteNodetips', [row.displayName])}`,
                     confirmFn: async () => {
                         let message, theme
                         try {
-                            if (this.isDeleteIng) return
-                            this.isDeleteIng = true
                             await this.$store.dispatch('environment/toDeleteNode', {
                                 projectId: this.projectId,
                                 params
@@ -1109,44 +831,6 @@
                                 }
                             )
                         } finally {
-                            this.isDeleteIng = false
-                            // 最后一页最后一条删除后，往前翻一页
-                            if (
-                                this.pagination.limit * (this.pagination.current - 1) + 1 === this.pagination.count
-                            ) {
-                                this.pagination.current -= 1
-                            }
-                            this.requestList()
-                        }
-                    }
-                })
-            },
-            /**
-             * 构建机信息
-             */
-            async changeCreatedUser (row) {
-                this.$bkInfo({
-                    title: this.$t('environment.重新授权'),
-                    subTitle: this.$t('environment.确认授权节点X在流水线中进行远程脚本执行或构件分发吗', [row.displayName]),
-                    confirmFn: async () => {
-                        let message, theme
-
-                        try {
-                            await this.$store.dispatch('environment/changeCreatedUser', {
-                                projectId: this.projectId,
-                                nodeHashId: row.nodeHashId
-                            })
-
-                            message = this.$t('environment.successfullyModified')
-                            theme = 'success'
-                        } catch (err) {
-                            message = err.message ? err.message : err
-                            theme = 'error'
-                        } finally {
-                            this.$bkMessage({
-                                message,
-                                theme
-                            })
                             this.requestList()
                         }
                     }
@@ -1192,8 +876,8 @@
                     if (res) {
                         this.constructToolConf.isShow = true
                         if (node) {
-                            const gateway = node.nodeType === 'DEVCLOUD' ? 'shenzhen' : node.gateway
-                            this.constructImportForm.model = node.nodeType === 'DEVCLOUD' ? 'LINUX' : node.osName.toUpperCase()
+                            const gateway = node.gateway
+                            this.constructImportForm.model = node.osName.toUpperCase()
                             this.requestGateway(gateway, node)
                         } else {
                             this.constructImportForm.model = 'LINUX'
@@ -1241,8 +925,8 @@
                         const isTarget = this.gatewayList.find(item => item.showName === gateway)
                         this.constructImportForm.location = isTarget && isTarget.zoneName
                     }
-
-                    if (node && this.buildNodes.includes(node.nodeType)) { // 如果是第三方构建机类型则获取构建机详情以获得安装命令或下载链接
+                    
+                    if (node && ['THIRDPARTY'].includes(node.nodeType)) { // 如果是第三方构建机类型则获取构建机详情以获得安装命令或下载链接
                         this.getVmBuildDetail(node.nodeHashId)
                     } else {
                         this.requestDevCommand()
@@ -1323,29 +1007,15 @@
                 }
             },
             installAgent (node) {
-                if (this.buildNodes.includes(node.nodeType)) {
+                if (['THIRDPARTY'].includes(node.nodeType)) {
                     this.nodeIp = node.ip
                     this.isAgent = true
-                    this.constructToolConf.importText = this.$t('environment.confirm')
+                    this.constructToolConf.importText = this.$t('environment.comfirm')
                     this.switchConstruct(node)
-                } else if (this.deploymentNodes.includes(node.nodeType)) {
-                    this.curNode = node
-                    this.$refs.installAgent.isShow = true
                 }
             },
-
-            handleShowLogDetail (node) {
-                this.curNode = node
-                this.taskId = node.taskId
-                this.$refs.installAgent.isShow = true
-            },
-
             async toImportNode (type) {
-                if (type === 'cmdb') {
-                    this.cmdbNodeSelectConf.isShow = true
-                } else {
-                    this.switchConstruct()
-                }
+                this.switchConstruct()
             },
             /**
              * 构建机导入节点
@@ -1353,7 +1023,7 @@
             async confirmFn () {
                 if (!this.dialogLoading.isLoading) {
                     this.dialogLoading.isLoading = true
-                    this.constructToolConf.importText = this.constructToolConf.importText === this.$t('environment.confirm') ? `${this.$t('environment.nodeInfo.submitting')}...` : `${this.$t('environment.nodeInfo.importing')}...`
+                    this.constructToolConf.importText = this.constructToolConf.importText === this.$t('environment.comfirm') ? `${this.$t('environment.nodeInfo.submitting')}...` : `${this.$t('environment.nodeInfo.importing')}...`
 
                     let message, theme
 
@@ -1466,74 +1136,8 @@
                     }
                 })
             },
-            async destoryNode (node) {
-                const h = this.$createElement
-                const content = h('p', {
-                    style: {
-                        textAlign: 'center'
-                    }
-                }, `${this.$t('environment.nodeInfo.destoryNode')}？`)
-
-                this.$bkInfo({
-                    theme: 'warning',
-                    type: 'warning',
-                    subHeader: content,
-                    confirmFn: async () => {
-                        let message, theme
-                        try {
-                            await this.$store.dispatch('environment/toDestoryNode', {
-                                projectId: this.projectId,
-                                nodeHashId: node.nodeHashId
-                            })
-
-                            message = this.$t('environment.successfullySubmited')
-                            theme = 'success'
-                        } catch (err) {
-                            message = err.message ? err.message : err
-                            theme = 'error'
-                        } finally {
-                            this.$bkMessage({
-                                message,
-                                theme
-                            })
-                            this.requestList()
-                        }
-                    }
-                })
-            },
-            makeImage (node) {
-                this.createImageNode = node
-                // this.showCreateImage = true
-                this.makeMirrorConf.isShow = true
-            },
-            handleNode (name, canUse, node) {
-                if (canUse) {
-                    switch (name) {
-                        case 'destory':
-                            this.destoryNode(node)
-                            break
-                        case 'makeImage':
-                            this.makeImage(node)
-                            break
-                        default:
-                            break
-                    }
-                }
-            },
             canShowDetail (row) {
-                return row.nodeType === 'THIRDPARTY' || (row.nodeType === 'DEVCLOUD' && row.nodeStatus === 'NORMAL')
-            },
-            confirmCmdbFn ({ theme, message, agentAbnormalNodesCount, agentNotInstallNodesCount }) {
-                this.importStatus = theme
-                this.importMessage = message
-                this.agentAbnormalNodesCount = agentAbnormalNodesCount
-                this.agentNotInstallNodesCount = agentNotInstallNodesCount
-                this.$refs.importTipsDialog.isShow = true
-                this.cmdbNodeSelectConf.isShow = false
-                this.requestList()
-            },
-            cancelCmdbFn () {
-                this.cmdbNodeSelectConf.isShow = false
+                return row.nodeType === 'THIRDPARTY'
             },
             handleSettingChange ({ fields, size }) {
                 this.selectedTableColumn = Object.freeze(fields)
@@ -1554,6 +1158,7 @@
                 this.pagination.limit = limit
                 this.requestList(this.requestParams)
             },
+
             handleSortChange ({ column, prop, order }) {
                 const orderMap = {
                     ascending: 'ASC',
@@ -1564,10 +1169,17 @@
                 this.requestParams.collation = orderMap[order]
                 this.requestList()
             },
+        
+            clearFilter () {
+                this.$refs.dateTimeRangeRef?.handleClear()
+                this.searchValue = []
+            },
+
             handleToPipelineDetail (param) {
                 if (!param.projectId) return
                 window.open(`${window.location.origin}/console/pipeline/${param.projectId}/${param.pipelineId}/detail/${param.buildId}/executeDetail`, '_blank')
             },
+
             formatTime (date) {
                 try {
                     return +new Date(date)
@@ -1588,6 +1200,7 @@
                 this.pagination.current = 1
                 this.requestList()
             },
+
             async handleExportCSV () {
                 try {
                     const res = await this.$store.dispatch('environment/exportNodeListCSV', {
@@ -1599,6 +1212,7 @@
                     console.error(e)
                 }
             },
+
             downloadCsv (response) {
                 if (!response) return
                 const csvContent = response.split(',')
@@ -1610,49 +1224,13 @@
                 document.body.appendChild(link)
                 link.click()
                 document.body.removeChild(link)
-            },
-            handleReImport (row) {
-                const params = []
-                params.push({
-                    nodeIp: row.ip,
-                    nodeId: row.nodeId
-                })
-                const confirmFn = async () => {
-                    let theme, message, agentAbnormalNodesCount, agentNotInstallNodesCount
-                    try {
-                        const res = await this.$store.dispatch('environment/reImportCmdbNode', {
-                            projectId: this.projectId,
-                            params
-                        })
-                        agentAbnormalNodesCount = res.agentAbnormalNodesCount
-                        agentNotInstallNodesCount = res.agentNotInstallNodesCount
-                        theme = 'success'
-                        await this.confirmCmdbFn({ theme, message, agentAbnormalNodesCount, agentNotInstallNodesCount })
-                    } catch (e) {
-                        theme = 'error'
-                        message = e.message || e
-                    }
-                }
-                this.$bkInfo({
-                    title: this.$t('environment.确认重新导入节点吗？', [row.ip]),
-                    okText: this.$t('environment.confirm'),
-                    cancelText: this.$t('environment.cancel'),
-                    confirmFn
-                })
-            },
-            clearFilter () {
-                this.$refs.dateTimeRangeRef?.handleClear()
-                this.searchValue = []
-            },
-            handleInstallEnd () {
-                this.requestList(this.requestParams)
             }
         }
     }
 </script>
 
 <style lang="scss">
-@import './../scss/conf';
+    @import './../scss/conf';
 
     %flex {
         display: flex;
@@ -1664,27 +1242,18 @@
         height: 100%;
         overflow: hidden;
 
+        .create-node-btn {
+            margin-right: 6px;
+        }
+
         .prompt-operator,
         .edit-operator {
             padding-right: 10px;
             color: #ffbf00;
 
             .devops-icon {
-                margin-right: 4px;
+                margin-right: 6px;
             }
-        }
-        .dashboard-entry {
-            color: #3c96ff;
-            cursor: pointer;
-            a {
-                font-size: 14px;
-                color: #3c96ff;
-            }
-        }
-        .jump-icon {
-            font-size: 18px;
-            position: relative;
-            top: 2px;
         }
 
         .edit-operator {
@@ -1747,10 +1316,6 @@
             border-color: $failColor;
         }
 
-        .normal-stutus-icon {
-            border-color: #979ba5;
-        }
-
         .delete-node-text {
             position: relative;
             padding-right: 9px;
@@ -1766,7 +1331,7 @@
 
         .node-item-content {
             position: absolute;
-            top: 7px;
+            top: 12px;
             display: flex;
             width: 90%;
             min-width: 280px;
@@ -1791,7 +1356,7 @@
                 margin-left: 10px;
                 position: absolute;
                 right: 11px;
-                top: 7px;
+                top: 8px;
                 .edit-base {
                     cursor: pointer;
                 }
@@ -1802,6 +1367,7 @@
             .is-danger {
                 border-color: #ff5656;
                 background-color: #fff4f4;
+                
             }
         }
 
@@ -1811,10 +1377,6 @@
 
         .node-table-wrapper {
             margin-top: 20px;
-            .bk-table-body-wrapper,
-            .bk-table-pagination-wrapper {
-                background-color: #fff !important;
-            }
             td:first-child {
                 position: relative;
                 color: $primaryColor;
@@ -1829,10 +1391,7 @@
                     cursor: pointer;
                 }
                 .useless {
-                  color: $fontLighterColor;
-                }
-                .unavailable {
-                    text-decoration: line-through;
+                  color: $fontLigtherColor;
                 }
                 .icon-edit {
                     position: relative;
@@ -1853,6 +1412,10 @@
                 padding-right: 30px;
             }
 
+            td:last-child {
+                cursor: pointer;
+            }
+
             .edit-node-item {
                 width: 24%;
             }
@@ -1860,69 +1423,24 @@
             .node-item-row {
               &.node-row-useless {
                 cursor: url('../images/cursor-lock.png'), auto;
-                color: $fontLighterColor;
+                color: $fontLigtherColor;
                 .node-count-item {
-                  color: $fontLighterColor;
+                  color: $fontLigtherColor;
                 }
               }
             }
-            .loading-icon {
-                display: inline-block;
-                position: relative;
-                width: 12px;
-                top: -12px;
-                margin-right: 5px;
-            }
-            .log-icon-box {
-                position: relative;
-                top: 3px;
-            }
-            .log-icon {
+
+            .install-agent {
+                color: $primaryColor;
                 cursor: pointer;
-                margin-left: 4px;
-            }
-
-            .node-removed-icon {
-                width: 20px;
-                height: 20px;
-                line-height: 20px;
-                font-size: 16px;
-                border-radius: 50%;
-                &.success {
-                    background-color: #e5f6ea;
-                    color: #3fc06d;
-                }
-                &.error {
-                    background-color: #fdd;
-                    color: #ea3636;
-                }
-            }
-            .node-removed-message {
-                padding-left: 2px;
-                color: #ea3636;
             }
         }
     }
 
-    .filter-bar {
-        display: flex;
-        align-items: center;
-        .search-input {
-            width: 680px;
-            background: #fff;
-            margin-right: 10px;
-            ::placeholder {
-                color: #c4c6cc;
-            }
-        }
-        .export-btn {
-            margin-left: 10px;
-        }
-    }
-    .pipeline-name {
-        cursor: pointer;
-        &:hover {
-            color: $primaryColor;
+    .node-reset-info {
+        .bk-dialog-body {
+            padding: 15px 55px;
+            color: $fontWeightColor;
         }
     }
 

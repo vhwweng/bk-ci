@@ -12,14 +12,7 @@
             class="user-entry"
         >
             {{ username }}
-            <span
-                v-if="!isHideHint"
-                class="user-header-hint"
-            />
-            <i
-                v-if="!disabled"
-                class="devops-icon icon-down-shape"
-            />
+            <i class="devops-icon icon-down-shape ml5" />
         </div>
         <template slot="content">
             <li
@@ -40,14 +33,11 @@
                     class="user-menu-item"
                     @click.stop="item.cb(item.name)"
                 >{{ item.label }}</span>
-                <span
-                    v-if="!isHideHint && item.isShowHint"
-                    class="user-hint"
-                />
             </li>
         </template>
     </bk-popover>
 </template>
+
 <script lang="ts">
     import Vue from 'vue'
     import { Component, Prop } from 'vue-property-decorator'
@@ -71,9 +61,6 @@
 
         @Prop()
         bkpaasUserId: string
-        
-        @Prop()
-        disabled: boolean
 
         @Action togglePopupShow
 
@@ -111,11 +98,6 @@
                         name: 'permission/auth/oauth'
                     },
                     {
-                        to: '/console/preci/',
-                        label: this.$t('PreCI'),
-                        isShowHint: true
-                    },
-                    {
                         cb: this.logout,
                         label: this.$t('logout')
                     }
@@ -129,8 +111,8 @@
         logout (): void {
             try {
                 const loginUrl = new URL(window.getLoginUrl())
-                loginUrl.searchParams.delete('is_signin')
                 loginUrl.searchParams.append('is_from_logout', '1')
+                console.log(loginUrl.href)
                 window.location.href = loginUrl.href
             } catch (error) {
                 console.error(error)

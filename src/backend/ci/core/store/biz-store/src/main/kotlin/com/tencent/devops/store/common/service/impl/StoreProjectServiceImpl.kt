@@ -135,19 +135,20 @@ class StoreProjectServiceImpl @Autowired constructor(
         val storeCode = installStoreReq.storeCode
         val storeType = installStoreReq.storeType
         val version = installStoreReq.version
-        var projectCodeList = installStoreReq.projectCodes
-        if (projectCodeList.isNotEmpty()) {
-            val testProjectCodeList = storeProjectRelDao.getTestProjectCodesByStoreCode(
-                dslContext = dslContext,
-                storeCode = storeCode,
-                storeType = storeType
-            )?.map { it.value1() }
-            if (!testProjectCodeList.isNullOrEmpty()) {
-                if (version == null) {
-                    // 如果版本号为空则剔除无需安装的调试项目
-                    projectCodeList.removeAll(testProjectCodeList)
-                }
+        val projectCodeList = installStoreReq.projectCodes
+        val testProjectCodeList = storeProjectRelDao.getTestProjectCodesByStoreCode(
+            dslContext = dslContext,
+            storeCode = storeCode,
+            storeType = storeType
+        )?.map { it.value1() }
+        if (!testProjectCodeList.isNullOrEmpty()) {
+            if (version == null) {
+                // 如果版本号为空则剔除无需安装的调试项目
+                projectCodeList.removeAll(testProjectCodeList)
             }
+        }
+        if (projectCodeList.isEmpty()) {
+            return Result(true)
         }
         val validateInstallResult = validateInstallPermission(
             publicFlag = publicFlag,
@@ -162,14 +163,11 @@ class StoreProjectServiceImpl @Autowired constructor(
         }
         val instanceId = installStoreReq.instanceId
         var increment = 0
-        if (projectCodeList.isEmpty()) {
-            projectCodeList = arrayListOf("")
-        }
         dslContext.transaction { t ->
             val context = DSL.using(t)
             for (projectCode in projectCodeList) {
                 // 判断是否已安装
-                val installStoreLockKey = "store:$projectCode:$storeType:$storeCode:$instanceId:install"
+                val installStoreLockKey = "store:$projectCode:$storeType:$storeCode:install"
                 val installStoreLock = RedisLock(redisOperation, installStoreLockKey, 10)
                 try {
                     installStoreLock.lock()
@@ -301,7 +299,7 @@ class StoreProjectServiceImpl @Autowired constructor(
                 language = I18nUtil.getLanguage(userId)
             )
         }
-        if (ChannelCode.isNeedAuth(channelCode) && projectCodeList.isNotEmpty()) {
+        if (ChannelCode.isNeedAuth(channelCode)) {
             // 获取用户有权限的项目列表
             val projectList = client.get(ServiceProjectResource::class).list(userId).data
             // 判断用户是否有权限安装到对应的项目
@@ -347,15 +345,13 @@ class StoreProjectServiceImpl @Autowired constructor(
     override fun isInstalledByProject(
         projectCode: String,
         storeCode: String,
-        storeType: Byte,
-        instanceId: String?
+        storeType: Byte
     ): Boolean {
         return storeProjectRelDao.isInstalledByProject(
             dslContext = dslContext,
             projectCode = projectCode,
             storeCode = storeCode,
-            storeType = storeType,
-            instanceId = instanceId
+            storeType = storeType
         )
     }
 
@@ -450,8 +446,7 @@ class StoreProjectServiceImpl @Autowired constructor(
                     projectCode = testItem.projectCode,
                     type = StoreProjectTypeEnum.TEST.type.toByte(),
                     storeType = storeType.type.toByte(),
-                    instanceId = testItem.instanceId,
-                    instanceName = testItem.instanceName
+                    instanceId = testItem.instanceId
                 )
             }
         }
@@ -471,7 +466,7 @@ class StoreProjectServiceImpl @Autowired constructor(
                 params = arrayOf(storeCode)
             )
         }
-        val testProjectInfos = storeProjectRelDao.getProjectRelInfo(
+        val testProjectInfos = storeProjectRelDao.getProjectInfoByStoreCode(
             dslContext = dslContext,
             storeCode = storeCode,
             storeType = storeType.type.toByte(),
@@ -480,7 +475,7 @@ class StoreProjectServiceImpl @Autowired constructor(
         val storeTestItems = mutableSetOf<StoreTestItem>()
         testProjectInfos?.forEach { testProjectInfo ->
             storeTestItems.add(
-                StoreTestItem(testProjectInfo.projectCode, testProjectInfo.instanceId, testProjectInfo.instanceName)
+                StoreTestItem(testProjectInfo.projectCode, testProjectInfo.instanceId)
             )
         }
         return storeTestItems

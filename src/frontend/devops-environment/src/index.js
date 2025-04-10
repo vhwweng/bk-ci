@@ -21,7 +21,6 @@ import routes from './router'
 import store from './store'
 import './scss/app.scss'
 
-window.changeFlag = false
 window.Pages = window.Pages || {}
 window.Pages.environment = {
     title: 'environmentManage',

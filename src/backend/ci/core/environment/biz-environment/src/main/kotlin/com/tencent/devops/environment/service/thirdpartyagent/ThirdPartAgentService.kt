@@ -133,9 +133,10 @@ class ThirdPartAgentService @Autowired constructor(
                         }
                         agentDao.saveAgentEnvs(
                             dslContext = dslContext,
-                            agentIds = setOf(agentId),
+                            agentIds = agents.map { it.id }.toSet(),
                             envStr = objectMapper.writeValueAsString(envs)
                         )
+                        return true
                     } finally {
                         lock.unlock()
                     }

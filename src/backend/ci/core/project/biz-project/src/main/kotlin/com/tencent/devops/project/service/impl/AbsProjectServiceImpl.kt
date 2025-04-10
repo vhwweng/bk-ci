@@ -999,7 +999,7 @@ abstract class AbsProjectServiceImpl @Autowired constructor(
     /**
      * 获取所有项目信息
      */
-    override fun list(userId: String, productIds: String?): List<ProjectVO> {
+    override fun list(userId: String): List<ProjectVO> {
         val startEpoch = System.currentTimeMillis()
         var success = false
         try {
@@ -1007,14 +1007,7 @@ abstract class AbsProjectServiceImpl @Autowired constructor(
             val projects = getProjectFromAuth(userId, null)
             logger.info("projects：$projects")
             val list = ArrayList<ProjectVO>()
-            projectDao.listByEnglishName(
-                dslContext = dslContext,
-                englishNameList = projects,
-                offset = null,
-                limit = null,
-                searchName = null,
-                productIds = productIds?.split(",")?.map { it.toInt() }?.toSet() ?: setOf()
-            ).map {
+            projectDao.listByEnglishName(dslContext, projects, null, null, null).map {
                 list.add(ProjectUtils.packagingBean(it))
             }
             success = true

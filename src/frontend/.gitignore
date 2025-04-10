@@ -3,6 +3,7 @@ formatCommitMsg.js
 frontend/*
 svg-sprites/dist
 package-lock.json
+yarn.lock
 yarn-error.log
 devops-gitci/src/conf
 */webpack_cache
@@ -12,6 +13,7 @@ devops-gitci/src/conf
 *.pem
 dist/
 .pnpm-global/
+
 
 
 .nx/cache

@@ -1,20 +1,18 @@
 <script setup lang="ts">
 import {
+  ref,
+  watch,
+  onBeforeUnmount,
+  computed,
+  onMounted,
+  getCurrentInstance,
+  h,
+} from 'vue';
+import {
   EditLine,
 } from 'bkui-vue/lib/icon';
-import {
-  computed,
-  getCurrentInstance,
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  shallowRef,
-  watch,
-  h
-} from 'vue';
-import { useI18n } from 'vue-i18n';
 import IAMIframe from './IAM-Iframe';
+import { useI18n } from 'vue-i18n';
 import { Message, Popover, InfoBox, Alert, Button } from 'bkui-vue';
 import http from '@/http/api';
 import DialectPopoverTable from "@/components/dialectPopoverTable.vue";
@@ -23,16 +21,7 @@ import { copyToClipboard } from "@/utils/util.js"
 const {
   t,
 } = useI18n();
-const emits = defineEmits(['change', 'approvedChange', 'initProjectForm', 'productIdChange']);
-
-interface Dept {
-  id: string;
-  name: string;
-  type?: string;
-  parentId?: string;
-  children?: Dept[];
-  [key: string]: any;
-}
+const emits = defineEmits(['change', 'approvedChange', 'initProjectForm']);
 
 const props = defineProps({
   data: Object,
@@ -42,7 +31,7 @@ const props = defineProps({
 
 const logoFiles = computed(() => {
   const { logoAddr } = projectData.value;
-  const files: {url: string}[] = [];
+  const files: any = [];
   if (logoAddr) {
     files.push({
       url: logoAddr,
@@ -50,16 +39,17 @@ const logoFiles = computed(() => {
   }
   return files;
 });
-const englishNameReg = /^[a-z][a-z0-9-]{1,32}$/;
-const inited = ref(false);
-const projectForm = ref<any>(null);
+const isRbac = computed(() => {
+  return authProvider.value === 'rbac'
+})
+const authProvider = ref(window.top.BK_CI_AUTH_PROVIDER || '')
+const projectForm = ref(null);
 const iframeRef = ref(null);
-const operationalList = ref([]);
 const vm = getCurrentInstance();
 const rules = {
   englishName: [
     {
-      validator: value => props.type !== 'apply' || englishNameReg.test(value),
+      validator: value => /^[a-z][a-z0-9\-]{1,32}$/.test(value),
       message: t('项目ID必须由小写字母+数字+中划线组成，以小写字母开头，长度限制32字符！'),
       trigger: 'blur',
     },
@@ -104,23 +94,19 @@ const projectTypeList = [
 ];
 
 const projectData = ref<any>(props.data);
-
-const orgValue = ref<string[]>([]);
-
 const deptLoading = ref({
+  bg: false,
   dept: false,
   center: false,
-  product: false,
 });
 
-const centerList = ref<Dept[]>([]);
-const deptMap = shallowRef(new Map());
+const curDepartmentInfo = ref({
+  bg: [],
+  dept: [],
+  center: [],
+});
 
 const showDialog = ref(false);
-
-const orgTree = shallowRef<Dept[]>([]);
-
-const bgName = ref('');
 
 const confirmSwitch = ref('');
 const pipelineSideslider = ref(false);
@@ -132,117 +118,78 @@ const projectId = computed(() => projectData.value.englishName);
 const currentPipelineDialect = computed(() => projectData.value.properties.pipelineDialect);
 const infoBoxRef = ref();
 
-const getDepartment = async ({ id, type = 'dept' }: Partial<Dept>, resolve?) => {
+const getDepartment = async (type: string, id: any) => {
+  deptLoading.value[type] = true;
   try {
-    if (!id) return [];
     const res = await http.getOrganizations({
       type,
       id,
     });
-    const parent = deptMap.value.get(id);
-    res.forEach((i) => {
-      if (deptMap.value.has(i.id)) return;
-      deptMap.value.set(i.id, i);
-    });
-    if (parent) {
-      parent.children = res.map((i) => {
-        if (deptMap.value.has(i.id)) return deptMap.value.get(i.id);
-        return i;
-      });
-      deptMap.value.set(id, parent);
-    }
-    resolve?.(res);
-    return res;
+    curDepartmentInfo.value[type] = [...res];
   } catch (err: any) {
     Message({
       message: err.message || err,
       theme: 'danger',
     });
+    curDepartmentInfo.value[type] = [];
+  } finally {
+    deptLoading.value[type] = false;
   }
 };
 
-const setProjectDeptProp = (dept: Dept) => {
-  if (!dept) return;
-  const { id, name, type } = dept;
-  projectData.value[`${type}Id`] = id;
-  projectData.value[`${type}Name`] = name;
+/**
+ * 根据 type id 设置组织名称
+ * @param {*} type 类型
+ * @param {*} id 类型ID
+ */
+const setOrgName = (type: string, id: any) => {
+  const item = curDepartmentInfo.value[type].find((item: { id: any; }) => item.id === id);
+  if (item) {
+    projectData.value[`${type}Name`] = item.name;
+  }
 };
 
-const handleChangeDept = async (deptPath) => {
-  if (!inited.value) return;  // 防止初始化时触发
-  [{
-    type: 'businessLine',
-    id: '',
-    name: '',
-  }, {
-    type: 'center',
-    id: '',
-    name: '',
-  }].forEach(setProjectDeptProp);
-
-  deptPath.forEach((deptId: string) => {
-    const dept = deptMap.value.get(deptId);
-    if (dept.type === 'bg') {
-      fetchOperationalList(dept.name);
-      projectData.value.productId = '';
-    }
-    setProjectDeptProp(deptMap.value.get(deptId));
-  });
+const handleChangeBg = (type: string, id: any) => {
   handleChangeForm();
-  if (!deptPath.length) {
-    ['bg', 'businessLine', 'dept', 'center'].forEach((type) => {
-      projectData.value[`${type}Id`] = '';
-      projectData.value[`${type}Name`] = '';
-    });
-    return;
-  }
-  const deptId = deptPath[deptPath.length - 1];
-  const lastOne = deptMap.value.get(deptId);
-  if (Array.isArray(lastOne?.children) && lastOne?.children.length > 0) {
-    centerList.value = lastOne.children;
-  } else {
-    centerList.value = await getDepartment({
-      id: deptId,
-      type: 'center',
-    });
+  projectData.value.deptId = '';
+  projectData.value.deptName = '';
+  projectData.value.centerId = '';
+  projectData.value.centerName = '';
+  curDepartmentInfo.value.dept = [];
+  curDepartmentInfo.value.center = [];
+  if (id) {
+    setOrgName(type, id);
+    getDepartment('dept', id);
   }
 };
 
-const handleChangeCenter = (id: any) => {
+const handleChangeDept = (type: string, id: any) => {
   handleChangeForm();
-  const name = centerList.value.find(i => i.id === id)?.name;
-  projectData.value.centerName = name ?? '';
+  projectData.value.centerId = '';
+  projectData.value.centerName = '';
+  curDepartmentInfo.value.center = [];
+  if (id) {
+    setOrgName(type, id);
+    getDepartment('center', id);
+  }
 };
 
-const fetchDepartmentList = async (deptInfos: Dept[]) => {
-  deptLoading.value.dept = true;
-  deptInfos.forEach((item, index) => {
-    deptMap.value.set(item.id, {
-      ...item,
-      parentId: index > 0 ? (deptInfos[index - 1]?.id ?? '0') : '-1',
-      ...(index < deptInfos.length - 1 ? {
-        children: [],
-      } : {
-        leaf: true,
-      }),
-    });
-  });
-  const depts = deptInfos.slice(0, -1);
+const handleChangeCenter = (type: string, id: any) => {
+  handleChangeForm();
+  if (id) {
+    setOrgName(type, id);
+  };
+};
 
-  await Promise.all(depts.map(dept => getDepartment({
-    id: dept.id,
-    type: 'dept',
-  })));
-  orgTree.value = Array.from(deptMap.value.values()).filter(i => i.parentId === '0');
-  orgValue.value = deptInfos.slice(1).map((i) => {
-    setProjectDeptProp(i);
-    return i.id;
-  });
-
-  nextTick(() => {
-    inited.value = true;
-  });
-  deptLoading.value.dept = false;
+const fetchDepartmentList = async () => {
+  const { bgId, deptId, centerId } = projectData.value;
+  await getDepartment('bg', 0);
+  if (bgId) {
+    await getDepartment('dept', bgId);
+  }
+  if (deptId) {
+    await getDepartment('center', deptId);
+  }
 };
 
 const handleChangeForm = () => {
@@ -453,7 +400,7 @@ const handleMessage = (event: any) => {
       case 'load':
         setTimeout(() => {
           // 回显数据
-          (vm?.refs?.iframeRef as any)?.$el?.firstElementChild?.contentWindow?.postMessage?.(
+          vm?.refs?.iframeRef?.$el?.firstElementChild?.contentWindow?.postMessage?.(
             JSON.parse(JSON.stringify({
               subject_scopes: projectData.value.subjectScopes,
             })),
@@ -466,72 +413,20 @@ const handleMessage = (event: any) => {
 };
 
 const fetchUserDetail = async () => {
-  let deptInfos: Dept[] = [];
-  let centerId = '';
-  let centerName = '';
-  if (props.type !== 'apply') { // 编辑项目
-    centerId = projectData.value.centerId;
-    centerName = projectData.value.centerName;
-    deptInfos = [{
-      id: '0',
-      name: '',
-      type: 'bg',
-    }, ...(projectData.value.bgId ? [{
-      id: projectData.value.bgId,
-      name: projectData.value.bgName,
-      type: 'bg',
-    }] : []),
-    ...(projectData.value.businessLineId ? [{
-      id: projectData.value.businessLineId,
-      name: projectData.value.businessLineName,
-      type: 'businessLine',
-    }] : []),
-    ...(projectData.value.deptId ? [{
-      id: projectData.value.deptId,
-      name: projectData.value.deptName,
-      type: 'dept',
-    }] : []),
-    ];
+  if (props.type !== 'apply') {
     initPipelineDialect.value = projectData.value?.properties?.pipelineDialect
-  } else { // 申请创建项目
-    const res = await http.getUserDetail();
-    deptInfos = res.deptInfos;
-    centerId = res.centerId;
-    centerName = res.centerName;
-  }
-  if (centerId) {
-    setProjectDeptProp({
-      type: 'center',
-      id: centerId,
-      name: centerName,
-    });
-  }
-  centerList.value = await getDepartment({
-    id: deptInfos[deptInfos.length - 1].id,
-    type: 'center',
+    return;
+  };
+  await http.getUserDetail().then((res) => {
+    const { bgId, centerId, deptId } = res;
+    projectData.value.bgId = bgId;
+    projectData.value.centerId = centerId === '0' ? '' : centerId;
+    projectData.value.deptId = deptId;
   });
-
-  if (deptInfos.length && deptInfos[1].type === 'bg') {
-    fetchOperationalList(deptInfos[1].name);
-  }
-  return deptInfos;
 };
 
 const showMemberDialog = () => {
   showDialog.value = true;
-};
-
-const fetchOperationalList = async (bgName) => {
-  if (!bgName) return;
-  deptLoading.value.product = true;
-  const res = await http.getOperationalList(bgName);
-  operationalList.value = res.map(i => ({
-    ...i,
-    value: i.ProductId,
-    label: i.ProductName,
-    id: i.ProductId,
-  }));
-  deptLoading.value.product = false;
 };
 
 const validateProjectNameTips = ref('');
@@ -542,7 +437,7 @@ watch(() => projectData.value.projectName, (val) => {
         validateProjectNameTips.value = '';
       })
       .catch(() => {
-        projectForm.value?.clearValidate();
+        projectForm.value.clearValidate();
         validateProjectNameTips.value = t('项目名称已存在');
       });
   } else if (!val) {
@@ -554,33 +449,32 @@ watch(() => projectData.value.projectName, (val) => {
 
 const validateEnglishNameTips = ref('');
 watch(() => projectData.value.englishName, (val) => {
-  if (props.type === 'apply' && val && englishNameReg.test(val)) {
+  if (props.type === 'apply' && val && /^[a-z][a-z0-9\-]{1,32}$/.test(val)) {
     http.validateEnglishName(val)
       .then(() => {
         validateEnglishNameTips.value = '';
       })
       .catch(() => {
-        projectForm.value?.clearValidate();
+        projectForm.value.clearValidate();
         validateEnglishNameTips.value = t('项目ID已存在');
       });
-  } else if (!val || !englishNameReg.test(val)) {
+  } else if (!val || !/^[a-z][a-z0-9\-]{1,32}$/.test(val)) {
     validateEnglishNameTips.value = '';
   }
 }, {
   deep: true,
 });
 
-watch(() => [projectData.value.authSecrecy, projectData.value.subjectScopes], () => {
+watch(() => [projectData.value.authSecrecy, projectData.value.projectType, projectData.value.subjectScopes], () => {
   projectForm.value.validate();
   emits('approvedChange', true);
 }, {
   deep: true,
 });
 
-
 onMounted(async () => {
-  const deptInfos = await fetchUserDetail();
-  await fetchDepartmentList(deptInfos);
+  await fetchUserDetail();
+  // await fetchDepartmentList();
   emits('initProjectForm', projectForm.value);
   window.addEventListener('message', handleMessage);
 });
@@ -642,76 +536,77 @@ onBeforeUnmount(() => {
         />
         <span class="logo-upload-tip">{{ t('只允许上传png、jpg，大小不超过 2M')}}</span>
       </bk-form-item>
-      <bk-form-item :label="t('项目类型')" property="projectType" :required="true">
-        <bk-select
-          v-model="projectData.projectType"
-          :placeholder="t('请选择项目类型')"
-          name="center"
-          searchable
-          @change="handleChangeForm"
-        >
-          <bk-option
-            v-for="projectType in projectTypeList"
-            :value="projectType.id"
-            :key="projectType.id"
-            :label="projectType.name"
-          />
-        </bk-select>
-      </bk-form-item>
-      <bk-form-item :label="t('项目所属组织')" property="bgId" :required="true">
+      <!-- <bk-form-item :label="t('项目所属组织')" property="bgId" :required="true">
         <div class="bk-dropdown-box">
-          <bk-cascader
-            :list="orgTree"
-            v-model="orgValue"
+          <bk-select
+            v-model="projectData.bgId"
+            placeholder="BG"
+            name="bg"
+            :loading="deptLoading.bg"
             filterable
-            is-remote
-            :placeholder="t('请选择部门')"
+            @change="id => handleChangeBg('bg', id)"
+          >
+            <bk-option
+              v-for="bg in curDepartmentInfo.bg"
+              :value="bg.id"
+              :key="bg.id"
+              :label="bg.name"
+            />
+          </bk-select>
+        </div>
+        <div class="bk-dropdown-box">
+          <bk-select
+            v-model="projectData.deptId"
+            :placeholder="t('部门')"
+            name="dept"
             :loading="deptLoading.dept"
-            :remote-method="getDepartment"
-            @change="handleChangeDept"
-          />
+            filterable
+            @change="id => handleChangeDept('dept', id)"
+          >
+            <bk-option
+              v-for="bg in curDepartmentInfo.dept"
+              :value="bg.id"
+              :key="bg.id"
+              :label="bg.name"
+            />
+          </bk-select>
         </div>
         <div class="bk-dropdown-box">
           <bk-select
             v-model="projectData.centerId"
-            :placeholder="t('请选择中心')"
+            :placeholder="t('中心')"
             name="center"
             :loading="deptLoading.center"
             filterable
-            @change="handleChangeCenter"
+            @change="id => handleChangeCenter('center', id)"
           >
             <bk-option
-              v-for="center in centerList"
+              v-for="center in curDepartmentInfo.center"
               :value="center.id"
               :key="center.id"
               :label="center.name"
             />
           </bk-select>
         </div>
-      </bk-form-item>
-      <bk-form-item
-        :label="t('项目所属运营产品')"
-        property="productId"
-        :required="true"
-        :description="t('公司OBS结算业务的运营产品，1个项目仅支持关联1个运营产品，多个项目可关联到同一运营产品')"
-      >
+      </bk-form-item> -->
+      <bk-form-item :label="t('项目类型')" property="projectType" :required="true">
         <bk-select
-          class="product-select"
-          v-model="projectData.productId"
-          :placeholder="t('请选择所属运营产品')"
-          :scroll-height="160"
+          v-model="projectData.projectType"
+          :placeholder="t('选择项目类型')"
           name="center"
-          filterable
-          enable-virtual-render
-          :list="operationalList"
-          :input-search="false"
-          :loading="deptLoading.product"
           searchable
           @change="handleChangeForm"
         >
+          <bk-option
+            v-for="type in projectTypeList"
+            :value="type.id"
+            :key="type.id"
+            :label="type.name"
+          />
         </bk-select>
       </bk-form-item>
       <bk-form-item
+        v-if="isRbac"
         :label="t('项目性质')"
         property="authSecrecy"
         :required="true"
@@ -735,7 +630,7 @@ onBeforeUnmount(() => {
     </div>
     <div class="project-tab">
       <p class="title">{{t('高级信息')}}</p>
-      <div>
+      <div v-if="isRbac">
         <div class="sub-title">{{ t('权限')  }}</div>
         <bk-form-item
           :label="t('项目最大可授权人员范围')"
@@ -808,7 +703,7 @@ onBeforeUnmount(() => {
             class="textarea"
             v-show="projectData.properties.enablePipelineNameTips"
             v-model="projectData.properties.pipelineNameFormat"
-            :placeholder="t('请输入流水线命名规范提示说明。示例: 请遵循流水线命名规范，以\'模块名(一个/多个/场景等)_触发机制(premerge/trunk/daily等)_测试裂隙(UT/引流/DIFF等)\'的命名格式')"
+            :placeholder="t('请输入流水线命名规范提示说明')"
             :rows="3"
             :maxlength="200"
             type="textarea"

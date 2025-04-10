@@ -18,18 +18,8 @@ interface RootState {
     currentNotice: object,
     moduleLoading: boolean,
     isPermissionDialogShow: boolean
-    hookMap: any
-    isShowNonDisclosureAgreement: boolean,
-    nonDisclosureAgreementConfig?: NonDisclosureAgreementConfig,
-    cancelDisclosureHandler: Function
 }
 
-interface NonDisclosureAgreementConfig {
-    signed: boolean
-    userId: string
-    schemeQrcodeUrl?: string
-    name?: string
-}
 interface Link {
     'name': string
     'link': string
@@ -53,17 +43,10 @@ interface Project {
     ccAppId?: number
     deployType?: object[]
     kind?: string
-    bgId?: string
-    bgName?: string
-    deptId?: string
-    deptName?: string
-    centerId?: string
-    centerName?: string
     isSecrecy?: boolean
     ccAppName?: string
     approvalStatus?: number
     enabled?: boolean
     logoAddr?: string
     gray?: boolean
-    routerTag?: string
 }

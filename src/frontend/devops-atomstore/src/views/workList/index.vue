@@ -27,8 +27,8 @@
 </template>
 
 <script>
-    import breadCrumbs from '@/components/bread-crumbs.vue'
     import transitionTab from '@/components/transition-tab.vue'
+    import breadCrumbs from '@/components/bread-crumbs.vue'
     import cookie from 'js-cookie'
     let currentProjectCode = cookie.get(X_DEVOPS_PROJECT_ID)
     if (!currentProjectCode) currentProjectCode = (window.projectList[0] || {}).projectCode
@@ -76,16 +76,6 @@
                                 link: this.BKCI_DOCS.IMAGE_GUIDE_DOC
                             }
                         ]
-                    },
-                    {
-                        name: 'serviceWork',
-                        label: this.$t('store.微扩展'),
-                        links: [
-                            {
-                                name: this.$t('store.微扩展指引'),
-                                link: this.BKCI_DOCS.EXT_GUIDE_DOC
-                            }
-                        ]
                     }
                 ]
             }
@@ -105,9 +95,6 @@
                         break
                     case 'imageWork':
                         name = this.$t('store.容器镜像')
-                        break
-                    case 'serviceWork':
-                        name = this.$t('store.微扩展')
                         break
                     default:
                         name = this.$t('store.流水线插件')
@@ -251,7 +238,7 @@
             display: flex;
         }
         .bk-tooltip {
-            color: $fontLighterColor;
+            color: $fontLigtherColor;
             p {
                 max-width: 250px;
                 text-align: left;

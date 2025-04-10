@@ -22,13 +22,11 @@
     import { mapGetters } from 'vuex'
     import atomVersion from '@/components/manage/release-manage/version/atom.vue'
     import imageVersion from '@/components/manage/release-manage/version/image.vue'
-    import serviceVersion from '@/components/manage/release-manage/version/service.vue'
 
     export default {
         components: {
             atomVersion,
-            imageVersion,
-            serviceVersion
+            imageVersion
         },
 
         data () {
@@ -70,8 +68,7 @@
             getVersionList () {
                 const methodMap = {
                     atom: this.getAtomVersion,
-                    image: this.getImageVersion,
-                    service: this.getServiceVersion
+                    image: this.getImageVersion
                 }
                 const type = this.$route.params.type
                 const currentMethod = methodMap[type]
@@ -108,21 +105,6 @@
                     this.pagination.count = res.count
                     const lastestVersion = this.versionList[0] || {}
                     const lastestStatus = lastestVersion.imageStatus
-                    this.showEdit = ['AUDIT_REJECT', 'RELEASED', 'GROUNDING_SUSPENSION', 'UNDERCARRIAGED'].includes(lastestStatus)
-                })
-            },
-
-            getServiceVersion () {
-                const postData = {
-                    serviceCode: this.detail.serviceCode,
-                    page: this.pagination.current,
-                    pageSize: this.pagination.limit
-                }
-                return this.$store.dispatch('store/requestServiceVersionList', postData).then((res) => {
-                    this.versionList = res.records || []
-                    this.pagination.count = res.count
-                    const lastestVersion = this.versionList[0] || {}
-                    const lastestStatus = lastestVersion.serviceStatus
                     this.showEdit = ['AUDIT_REJECT', 'RELEASED', 'GROUNDING_SUSPENSION', 'UNDERCARRIAGED'].includes(lastestStatus)
                 })
             }

@@ -62,7 +62,5 @@ data class SubPipelineStartUpInfo(
     @get:Schema(title = "value值获取集合", required = true)
     val valueList: List<StartUpInfo>,
     @get:Schema(title = "value值是否多选", required = true)
-    val valueMultiple: Boolean,
-    @get:Schema(title = "参数类型", required = true)
-    val type: String? = ""
+    val valueMultiple: Boolean
 )

@@ -67,8 +67,6 @@ object StreamBinding {
 
     const val PIPELINE_ARCHIVE = "engine.pipeline.archive"
 
-    const val PIPELINE_TEMPLATE_INSTANCE = "engine.pipeline.template.instance"
-
     // 监控相关的队列
     const val PIPELINE_BUILD_MONITOR = "engine.pipeline.listener.monitor"
     const val PIPELINE_BUILD_HEART_BEAT = "engine.pipeline.build.hb"
@@ -204,9 +202,6 @@ object StreamBinding {
 
     // 权限资源关联用户组修改事件
     const val AUTH_RESOURCE_GROUP_MODIFY = "auth.resource.group.modify"
-
-    // 权限项目级权限变更同步事件
-    const val AUTH_PROJECT_LEVEL_GROUP_PERMISSIONS_SYNC = "auth.project.level.group.permissions.sync"
 
     // 数据库分片
     const val SHARDING_ROUTING_RULE_FANOUT = "sharding.routing.rule.exchange.fanout"

@@ -1,8 +1,0 @@
-version: v3.0
-name: pac
-stages:
-- jobs:
-    job_1:
-      steps:
-      - name: yamlElementInsert test
-        uses: '@1.*'

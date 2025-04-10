@@ -13,13 +13,12 @@ import '@/css/index.css'
 import router from '@/router'
 import store from '@/store'
 import log from '@blueking/log'
-import { bkMessage } from '@tencent/bk-magic-vue'
+import { bkMessage } from 'bk-magic-vue'
 import bkPipeline from 'bkui-pipeline'
 import VeeValidate from 'vee-validate'
 
 import {
-    getCookie,
-    getLanguageMap
+    getCookie, getLanguageMap
 } from '@/utils'
 import VueI18n from 'vue-i18n'
 Vue.use(VueI18n)
@@ -57,4 +56,3 @@ window.mainComponent = new Vue({
     components: { App },
     template: '<App/>'
 })
-console.log(window.mainComponent, 6676)

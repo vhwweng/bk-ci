@@ -113,20 +113,19 @@
 </template>
 
 <script>
+    import { deepCopy } from '@/utils/util'
     import FormField from '@/components/AtomPropertyPanel/FormField'
-    import AtomCheckbox from '@/components/atomFormField/AtomCheckbox'
-    import Selector from '@/components/atomFormField/Selector'
     import VuexInput from '@/components/atomFormField/VuexInput'
     import VuexTextarea from '@/components/atomFormField/VuexTextarea'
+    import Selector from '@/components/atomFormField/Selector'
+    import AtomCheckbox from '@/components/atomFormField/AtomCheckbox'
     import validMixins from '@/components/validMixins'
-    import { deepCopy } from '@/utils/util'
     import ParamValueOption from './children/param-value-option'
-    import { mapState } from 'vuex'
 
     import {
-        CONST_TYPE_LIST,
         DEFAULT_PARAM,
         PARAM_LIST,
+        CONST_TYPE_LIST,
         STRING
     } from '@/store/modules/atom/paramsConfig'
 
@@ -178,21 +177,10 @@
             }
         },
         computed: {
-            ...mapState('atom', [
-                'pipelineSetting'
-            ]),
-            pipelineAsCodeSettings () {
-                return this.pipelineSetting?.pipelineAsCodeSettings || {}
-            },
-            currentDialect () {
-                const { inheritedDialect, projectDialect, pipelineDialect } = this.pipelineAsCodeSettings
-                return (inheritedDialect ? projectDialect : pipelineDialect) === 'CONSTRAINED'
-            },
             idValidRule () {
-                const baseRules = 'required|notInList:' + this.getUniqueArgs('id')
-                const additionalRules = this.paramType === 'constant' ? '|constVarRule|max:64' : ''
-                const dialectRules = this.currentDialect ? '|paramsIdRule' : ''
-                return `${baseRules}${dialectRules}${additionalRules}`
+                return this.paramType === 'constant'
+                    ? `required|paramsIdRule|notInList:${this.getUniqueArgs('id')}|constVarRule|max:64`
+                    : `required|paramsIdRule|notInList:${this.getUniqueArgs('id')}`
             },
             idLabel () {
                 return this.paramType === 'constant' ? this.$t('newui.pipelineParam.constName') : this.$t('newui.pipelineParam.varName')

@@ -270,7 +270,7 @@
                         width: 500,
                         theme: 'warning',
                         type: 'warning',
-                        subTitle: this.$t('ticket.credential.deleteCredentialTips', [credential.credentialId]),
+                        title: `${this.$t('ticket.credential.deleteCredentialTips', [credential.credentialId])}`,
                         confirmFn: async () => {
                             let message, theme
 
@@ -281,16 +281,16 @@
                                 })
                                 message = this.$t('ticket.credential.successfullyDeletedCredential')
                                 theme = 'success'
-                                this.requestList()
                             } catch (err) {
                                 message = err.message ? err.message : err
                                 theme = 'error'
                             } finally {
-                                message && this.$bkMessage({
+                                this.$bkMessage({
                                     message,
                                     theme
                                 })
                             }
+                            this.requestList()
                         }
                     })
                 } else {

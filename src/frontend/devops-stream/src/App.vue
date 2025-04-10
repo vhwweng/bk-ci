@@ -1,14 +1,20 @@
 <template>
     <section>
         <router-view class="stream-main" :name="childRouteName"></router-view>
+        <login></login>
     </section>
 </template>
 
 <script>
     import { mapState } from 'vuex'
+    import Login from '@/components/login.vue'
 
     export default {
         name: 'App',
+
+        components: {
+            Login
+        },
 
         computed: {
             ...mapState(['exceptionInfo']),
@@ -22,13 +28,8 @@
 
         created () {
             if (this.pathName === '/') {
-                let routeName = 'dashboard'
-                if (!localStorage.getItem('visited-stream-home')) {
-                    localStorage.setItem('visited-stream-home', true)
-                    routeName = 'home'
-                }
                 this.$router.push({
-                    name: routeName
+                    name: 'dashboard'
                 })
             }
         }

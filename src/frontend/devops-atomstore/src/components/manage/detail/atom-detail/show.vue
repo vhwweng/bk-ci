@@ -44,17 +44,7 @@
                         </span>
                     </div>
                 </li>
-                <li
-                    class="detail-item"
-                    v-if="!isEnterprise"
-                >
-                    <span class="detail-label">{{ $t('store.是否开源：') }}</span>
-                    <span>{{ detail.visibilityLevel | levelFilter }}</span>
-                </li>
-                <li
-                    class="detail-item"
-                    v-if="isEnterprise"
-                >
+                <li class="detail-item">
                     <span class="detail-label">{{ $t('store.发布包：') }}</span>
                     <span>{{ detail.pkgName || '--' }}</span>
                 </li>
@@ -91,14 +81,6 @@
     import labelList from '../../../labelList'
 
     export default {
-        filters: {
-            levelFilter (val = 'LOGIN_PUBLIC') {
-                const bkLocale = window.devops || {}
-                if (val === 'LOGIN_PUBLIC') return bkLocale.$t('store.是')
-                else return bkLocale.$t('store.否')
-            }
-        },
-
         components: {
             labelList
         },
@@ -121,9 +103,6 @@
             }
         },
         computed: {
-            isEnterprise () {
-                return VERSION_TYPE === 'ee'
-            },
             mavenLang () {
                 return this.$i18n.locale === 'en-US' ? 'en' : this.$i18n.locale
             },

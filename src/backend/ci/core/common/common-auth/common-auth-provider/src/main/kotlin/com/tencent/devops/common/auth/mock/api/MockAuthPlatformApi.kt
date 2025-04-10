@@ -31,13 +31,11 @@ import com.tencent.devops.common.auth.api.AuthPlatformApi
 import org.springframework.beans.factory.annotation.Value
 
 class MockAuthPlatformApi : AuthPlatformApi {
-    @Value("\${auth.platform.manager:admin}")
+    @Value("\${auth.platform.manager:#{admin}}")
     val platformManager = "admin"
 
     override fun validateUserPlatformPermission(user: String): Boolean {
-        // 调试：临时忽略用户
-        val ignored = listOf("v_hejieehe")
         val managerList = platformManager.split(",")
-        return managerList.contains(user) || ignored.contains(user)
+        return managerList.contains(user)
     }
 }

@@ -256,12 +256,6 @@ const actions = {
             return response
         })
     },
-
-    requestTurboV2Info ({ commit, state, dispatch }, { bsPipelineId, bsProjectId, bsElementId }) {
-        return ajax.get(`turbo-new/api/user/turboPlan/projectId/${bsProjectId}/pipelineId/${bsPipelineId}/pipelineElementId/${bsElementId}`).then(response => {
-            return response
-        })
-    },
     /**
      * 编译加速开关
      *
@@ -296,6 +290,16 @@ const actions = {
     requestMetadataInfo ({ commit, state, dispatch }, { projectId, artifactoryType, path }) {
         return ajax.get(`artifactory/api/user/artifactories/${projectId}/${artifactoryType}/show?path=${path}`).then(response => {
             return response.data
+        })
+    },
+    /**
+     * 重放流水线
+     */
+    requestRePlayPipeline ({ commit, state, dispatch }, { projectId, pipelineId, buildId, forceTrigger = false }) {
+        return ajax.post(`${prefix}${projectId}/${pipelineId}/${buildId}/replayByBuild?forceTrigger=${forceTrigger}`).then(response => {
+            return response.data
+        }).catch(e => {
+            return e
         })
     }
 }

@@ -121,16 +121,14 @@ class ServiceStoreResourceImpl @Autowired constructor(
         storeType: StoreTypeEnum,
         version: String,
         projectCode: String,
-        userId: String,
-        instanceId: String?
+        userId: String
     ): Result<Boolean> {
         return storeComponentManageService.validateComponentDownloadPermission(
             storeCode = storeCode,
             storeType = storeType,
             version = version,
             projectCode = projectCode,
-            userId = userId,
-            instanceId = instanceId
+            userId = userId
         )
     }
 

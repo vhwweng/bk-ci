@@ -28,14 +28,19 @@
     import { mapActions, mapState } from 'vuex'
     import { common } from '@/http'
     import user from './user'
-    import toggleLanguage from './toggle-language.vue'
     import LINK_CONFIG from '@/conf/link-config.js'
+    import toggleLanguage from './toggle-language.vue'
 
     export default ({
         name: 'StreamHeader',
         components: {
             user,
             toggleLanguage
+        },
+        data () {
+            return {
+                LINK_CONFIG
+            }
         },
         computed: {
             ...mapState(['exceptionInfo', 'projectInfo', 'projectId', 'user', 'permission', 'messageNum']),
@@ -51,25 +56,25 @@
                         name: this.$t('dashboardNav'),
                         active: this.$route.name === 'dashboard',
                         routeName: 'dashboard'
-                    },
-                    {
-                        name: this.$t('changeLog'),
-                        active: false,
-                        type: 'url',
-                        url: LINK_CONFIG.CHANGE_LOG
-                    },
-                    {
-                        name: this.$t('documentation'),
-                        active: false,
-                        type: 'url',
-                        url: LINK_CONFIG.STREAM
-                    },
-                    {
-                        name: this.$t('issue'),
-                        active: false,
-                        type: 'url',
-                        url: LINK_CONFIG.ISSUE
                     }
+                    // {
+                    //     name: this.$t('changeLog'),
+                    //     active: false,
+                    //     type: 'url',
+                    //     url: LINK_CONFIG.CHANGE_LOG
+                    // },
+                    // {
+                    //     name: this.$t('documentation'),
+                    //     active: false,
+                    //     type: 'url',
+                    //     url: LINK_CONFIG.STREAM
+                    // },
+                    // {
+                    //     name: this.$t('issue'),
+                    //     active: false,
+                    //     type: 'url',
+                    //     url: LINK_CONFIG.ISSUE
+                    // }
                 ]
             }
         },
@@ -117,7 +122,7 @@
 
 <style lang="postcss" scoped>
     .stream-header {
-        height: 60px;
+        height: 61px;
         padding: 0 20px 0 10px;
         background: #182132;
         /* border-bottom: 1px solid #dde4eb; */

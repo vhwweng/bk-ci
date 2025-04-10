@@ -51,7 +51,6 @@ class PipelineWebHookEventListener @Autowired constructor(
     override fun onEvent(eventId: Long, repository: Repository, webhook: Webhook, replayPipelineId: String?) {
         // 不是灰度仓库,不执行新逻辑
         if (!webhookGrayService.isGrayRepo(scmCode = repository.scmCode, repository.projectName)) {
-            logger.info("not gray repo|scmCode:${repository.scmCode}|repoName:${repository.projectName}")
             return
         }
         val triggerPipelines = if (replayPipelineId != null) {

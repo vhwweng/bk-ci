@@ -39,10 +39,8 @@ interface Window {
     BK_CI_VERSION: string
     PUBLIC_URL_PREFIX: string
     getLoginUrl: Function
-    diclosurePrjoectList: string[]
     attachEvent(event: string, listener: EventListener): boolean
     detachEvent(event: string, listener: EventListener): void
-    printError: Function
 }
 interface subService {
     'collected': boolean
@@ -83,14 +81,12 @@ declare module '*.ts' {
     }
     export default Vue
 }
-declare const LOGIN_SERVICE_URL: string
-declare const API_URL_PREFIX: string
-declare const DOCS_URL_PREFIX: string
-declare const IWIKI_DOCS_URL: string
-declare const DEVOPS_LS_VERSION: string
-declare const ENTERPRISE_VERSION: string
-declare const VERSION_TYPE: string
-declare const PERM_URL_PREFIX: string
+
+declare let LOGIN_SERVICE_URL: string
+declare let API_URL_PREFIX: string
+declare let DOCS_URL_PREFIX: string
+declare let DEVOPS_LS_VERSION: string
+declare let ENTERPRISE_VERSION: string
 
 declare module '*.png'
 

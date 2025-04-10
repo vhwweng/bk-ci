@@ -51,7 +51,6 @@ module.exports = (env = {}, argv) => {
     const config = webpackBaseConfig({
         env,
         argv,
-        isConsole: true,
         entry: './src/entry',
         publicPath: '/console/',
         dist: '/console',
@@ -92,26 +91,22 @@ module.exports = (env = {}, argv) => {
             inject: false,
             publicPath: `${isDev ? '' : '__BK_CI_PUBLIC_PATH__'}/console/`,
             templateParameters: {
-                PUBLIC_PATH_PREFIX: isDev ? '' : '__BK_CI_PUBLIC_PATH__',
-                BK_SHARED_RES_URL: isDev ? '' : '__BK_SHARED_RES_URL__',
-                BK_PAAS_PRIVATE_URL: isDev ? '' : '__BK_PAAS_PRIVATE_URL__',
-                BK_CI_AUTH_PROVIDER: isDev ? '' : '__BK_CI_AUTH_PROVIDER__'
+                PUBLIC_PATH_PREFIX: isDev ? '' : '__BK_CI_PUBLIC_PATH__'
             },
             minify: {
                 removeComments: false
             },
             DEVOPS_LS_VERSION: lsVersion
         }),
-        new AssetPlugin({
-            isDev: isDev
-        }),
+        new AssetPlugin(),
         new SpriteLoaderPlugin({
             plainSprite: true
         }),
         new AddAssetHtmlPlugin([
             {
-                glob: `${path.resolve('./src/assets/static')}/main.*.dll.js`,
+                filepath: require.resolve('./src/assets/static/main.dll.js'),
                 publicPath: path.posix.join((isDev ? '' : '__BK_CI_PUBLIC_PATH__'), '/console/', 'static/'),
+                hash: true,
                 includeSourcemap: false
             }
         ]),
@@ -131,12 +126,5 @@ module.exports = (env = {}, argv) => {
     config.devServer.historyApiFallback = {
         rewrites: [{ from: /^\/console/, to: '/console/index.html' }]
     }
-    config.devServer.proxy = {
-        '/ms': {
-            target: 'https://dev.devops.woa.com',
-            changeOrigin: true
-        }
-    }
-
     return config
 }

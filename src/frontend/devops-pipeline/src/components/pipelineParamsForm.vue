@@ -21,79 +21,61 @@
                     flex
                     v-bind="Object.assign({}, param, { id: undefined, name: 'devops' + param.name })"
                     :class="{
-                        'is-diff-param': (highlightChangedParam && param.isChanged) || param.affectedChanged
+                        'is-diff-param': highlightChangedParam && param.isChanged
                     }"
                     :disabled="disabled"
                     :placeholder="param.placeholder"
                     :is-diff-param="highlightChangedParam && param.isChanged"
+                    :enable-version-control="param.enableVersionControl"
+                    :random-sub-path="param.latestRandomStringInPath"
                 />
-                <span
-                    class="meta-data"
-                    v-show="showMetadata(param.type, param.value)"
-                >{{ $t('metaData') }}
-                    <aside class="metadata-box">
-                        <metadata-list
-                            :is-left-render="(index % 2) === 1"
-                            :path="isArtifactoryParam(param.type) ? param.value : ''"
-                        ></metadata-list>
-                    </aside>
-                </span>
             </section>
             <span
-                v-if="!errors.has('devops' + param.name) && param.desc"
+                v-if="!errors.has('devops' + param.name)"
                 :class="['preview-params-desc', param.type === 'TEXTAREA' ? 'params-desc-styles' : '']"
                 :title="param.desc"
             >
                 {{ param.desc }}
-            </span>
-            <span
-                v-if="param.affectTips"
-                class="preview-params-desc affect-warning"
-            >
-                {{ param.affectTips }}
             </span>
         </form-field>
     </bk-form>
 </template>
 
 <script>
-    import CascadeRequestSelector from '@/components/atomFormField/CascadeRequestSelector'
     import EnumInput from '@/components/atomFormField/EnumInput'
-    import FileParamInput from '@/components/atomFormField/FileParamInput'
     import RequestSelector from '@/components/atomFormField/RequestSelector'
     import Selector from '@/components/atomFormField/Selector'
     import VuexInput from '@/components/atomFormField/VuexInput'
     import VuexTextarea from '@/components/atomFormField/VuexTextarea'
     import FormField from '@/components/AtomPropertyPanel/FormField'
     import metadataList from '@/components/common/metadata-list'
+    import FileParamInput from '@/components/atomFormField/FileParamInput'
+    import CascadeRequestSelector from '@/components/atomFormField/CascadeRequestSelector'
+    import { isObject } from '@/utils/util'
     import {
-        ARTIFACTORY,
         BOOLEAN,
         BOOLEAN_LIST,
         CODE_LIB,
         CONTAINER_TYPE,
         ENUM,
-        getBranchOption,
         GIT_REF,
-        isArtifactoryParam,
-        isBuildResourceParam,
         isCodelibParam,
         isEnumParam,
         isFileParam,
         isGitParam,
         isMultipleParam,
         isRemoteType,
-        isRepoParam,
         isSvnParam,
         MULTIPLE,
         ParamComponentMap,
-        REPO_REF,
         STRING,
         SUB_PIPELINE,
         SVN_TAG,
-        TEXTAREA
+        TEXTAREA,
+        REPO_REF,
+        getBranchOption,
+        isRepoParam
     } from '@/store/modules/atom/paramsConfig'
-    import { isObject, isShallowEqual } from '@/utils/util'
 
     export default {
 
@@ -127,32 +109,17 @@
             },
             highlightChangedParam: Boolean
         },
-        data () {
-            return {
-                prevAffectedValues: {}
-            }
-        },
         computed: {
             paramList () {
                 return this.params.map(param => {
                     let restParam = {}
                     if (param.type !== STRING || param.type !== TEXTAREA) {
                         if (isRemoteType(param)) {
-                            const val = (param.type === 'MULTIPLE' && typeof this.paramValues?.[param.id] === 'string') ? this.paramValues[param.id].split(',').filter(i => i !== '') : this.paramValues?.[param.id]
-                            const affected = this.getAffectedBy(param.payload.url)
-                            const affectedChanged = this.detectChanged(this.prevAffectedValues?.[param.id], affected)
-                            this.prevAffectedValues[param.id] = affected
-
                             restParam = {
                                 ...restParam,
                                 ...param.payload,
                                 multiSelect: param.type === 'MULTIPLE',
-                                value: param.type === 'MULTIPLE' && !Array.isArray(val) ? [] : val,
-                                allIdString: true,
-                                paramValues: this.paramValues,
-                                affected,
-                                affectedChanged,
-                                affectTips: affectedChanged && Object.keys(affected).length > 0 ? this.$t('relyChanged', [Object.keys(affected).join('/')]) : ''
+                                value: param.type === 'MULTIPLE' ? this.paramValues?.[param.id]?.split(',') : this.paramValues[param.id]
                             }
                         } else {
                             restParam = {
@@ -164,7 +131,7 @@
                         }
 
                         // codeLib 接口返回的数据没有匹配的默认值,导致回显失效，兼容加上默认值
-                        if (param.type === CODE_LIB || isBuildResourceParam(param.type)) {
+                        if (param.type === CODE_LIB) {
                             const value = this.paramValues[param.id]
                             const listItemIndex = restParam.list && restParam.list.findIndex(i => i.value === value)
                             if (listItemIndex < 0 && value) {
@@ -172,13 +139,6 @@
                                     key: value,
                                     value: value
                                 })
-                            }
-                            if (isBuildResourceParam(param.type)) {
-                                restParam.toggleVisible = (isShow) => {
-                                    if (isShow) {
-                                        this.fetchBuildResourceList(param)
-                                    }
-                                }
                             }
                         }
                     }
@@ -205,6 +165,15 @@
                             }
                         }
                     }
+
+                    if (isFileParam(param.type)) {
+                        // 预览时，重新上传文件，会把文件类型的value变成对象而非字符串，这时要更新随机串回显到页面上
+                        const paramValue = this.paramValues[param.id]
+                        const newRandomString = paramValue?.latestRandomStringInPath
+                        const defaultRandomString = param.latestRandomStringInPath ?? param.randomStringInPath
+                        restParam.latestRandomStringInPath = newRandomString ?? defaultRandomString
+                        restParam.value = typeof paramValue === 'object' ? paramValue?.directory : paramValue
+                    }
                     return {
                         ...param,
                         component: this.getParamComponentType(param),
@@ -224,7 +193,6 @@
             }
         },
         methods: {
-            isArtifactoryParam,
             isObject,
             getBranchOption,
             getParamComponentType (param) {
@@ -244,7 +212,6 @@
                     case param.type === GIT_REF:
                     case param.type === CODE_LIB:
                     case param.type === CONTAINER_TYPE:
-                    case param.type === ARTIFACTORY:
                     case param.type === SUB_PIPELINE:
                     case param.type === REPO_REF:
                         return param.options
@@ -272,49 +239,13 @@
             },
             handleParamUpdate (name, value) {
                 const param = this.getParamByName(name)
-                if (isMultipleParam(param.type) || (isRemoteType(param) && param.multiSelect)) { // 复选框，需要将数组转化为逗号隔开的字符串
-                    this.handleParamChange(param.name, Array.isArray(value) ? value.join(',') : '')
-                } else {
-                    this.handleParamChange(param.name, value)
+                if (isMultipleParam(param.type)) { // 复选框，需要将数组转化为逗号隔开的字符串
+                    value = Array.isArray(value) ? value.join(',') : ''
                 }
-            },
-            showMetadata (type, value) {
-                return isArtifactoryParam(type) && value && this.$route.path.indexOf('preview') > -1
+                this.handleParamChange(param.name, value)
             },
             showFileUploader (type) {
                 return isFileParam(type) && this.$route.path.indexOf('preview') > -1
-            },
-            async fetchBuildResourceList (param) {
-                try {
-                    const { data } = await this.$ajax.get(`environment/api/user/envnode/${this.$route.params.projectId}/listNew?nodeType=THIRDPARTY&page=1&pageSize=100`)
-                    const list = data.records.map(item => ({
-                        key: item.displayName,
-                        value: item.displayName
-                    }))
-                    param.list = list
-                    param.options = list
-                } catch (error) {
-                    console.log(error)
-                }
-            },
-            getAffectedBy (originUrl) {
-                try {
-                    const PLUGIN_URL_PARAM_REG = /\{(.*?)(\?){0,1}\}/g
-                    return originUrl.match(PLUGIN_URL_PARAM_REG).map(item => item.replace(/\{(\S+)\}/, '$1')).reduce((acc, key) => {
-                        if (Object.hasOwnProperty.call(this.paramValues, key)) {
-                            acc[key] = this.paramValues[key]
-                        }
-                        return acc
-                    }, {})
-                } catch (error) {
-                    return {}
-                }
-            },
-            detectChanged (prev, current) {
-                if (prev && current) {
-                    return !isShallowEqual(prev, current)
-                }
-                return false
             }
         }
     }
@@ -365,9 +296,6 @@
         width: 100%;
         font-size: 12px;
         @include ellipsis();
-        &.affect-warning {
-            color: #FF9C01;
-        }
     }
     .params-desc-styles {
         margin-top: 32px;

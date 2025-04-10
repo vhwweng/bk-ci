@@ -1,14 +1,12 @@
 <template>
-    <detail-container @close="$emit('close')"
-        :title="job.name"
-        :status="job.status"
-    >
-        <section v-if="showDebugBtn" class="web-console" :style="{ right: executeCount > 1 ? '390px' : '280px' }">
-            <span @click="startDebug">
+    <detail-container @close="$emit('close')" :title="job.name" :status="job.status">
+        <!-- <section v-if="showDebugBtn" class="web-console" :style="{ right: executeCount > 1 ? '390px' : '280px' }">
+            <span onclick="startDebug">
                 {{$t('pipeline.webConsole')}}
             </span>
-        </section>
-        <job-log :plugin-list="pluginList"
+        </section> -->
+        <job-log
+            :plugin-list="pluginList"
             :build-id="$route.params.buildId"
             :down-load-link="downLoadJobLink"
             :execute-count="executeCount"
