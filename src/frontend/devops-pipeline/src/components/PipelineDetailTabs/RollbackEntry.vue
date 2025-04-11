@@ -12,7 +12,7 @@
                 permissionData: {
                     projectId: projectId,
                     resourceType: 'pipeline',
-                    resourceCode: pipelineId,
+                    resourceCode: rollbackId,
                     action: RESOURCE_ACTION.EDIT
                 }
             }"
@@ -24,7 +24,7 @@
         </bk-button>
         <bk-dialog
             v-model="isShowConfirmDialog"
-            :width="666"
+            :width="480"
             footer-position="center"
             theme="primary"
         >
@@ -37,25 +37,25 @@
             </header>
             <div
                 v-if="hasDraftPipeline"
-                class="draft-hint-content"
+                :class="['draft-hint-content', { 'is-active-branch-version': isActiveBranchVersion }]"
             >
-                {{ $t('dropDraftTips', [versionName]) }}
+                {{ isActiveBranchVersion ? $t('template.templateCoverWarningDesc', [draftCreator, draftBaseVersionName]) : $t('dropDraftTips', [versionName]) }}
             </div>
             <footer slot="footer">
                 <bk-button
                     theme="primary"
                     @click="rollback"
                 >
-                    {{ $t('newVersion') }}
+                    {{ $t(isActiveBranchVersion ? 'resume' : 'newVersion') }}
                 </bk-button>
                 <bk-button
-                    v-if="hasDraftPipeline"
+                    v-if="hasDraftPipeline && !isActiveBranchVersion"
                     @click="goEdit(draftVersion)"
                 >
                     {{ $t('editDraft') }}
                 </bk-button>
                 <bk-button @click="close">
-                    {{ $t('thinkthink') }}
+                    {{ $t(isActiveBranchVersion ? 'cancel' : 'thinkthink') }}
                 </bk-button>
             </footer>
         </bk-dialog>
@@ -63,7 +63,6 @@
 </template>
 
 <script>
-    import { UPDATE_PIPELINE_INFO } from '@/store/modules/atom/constants'
     import {
         RESOURCE_ACTION
     } from '@/utils/permission'
@@ -102,11 +101,16 @@
                 type: String,
                 required: true
             },
-            pipelineId: {
+            rollbackId: {
                 type: String,
                 required: true
             },
-            isActiveDraft: Boolean
+            draftCreator: {
+                type: String,
+                default: ''
+            },
+            isActiveDraft: Boolean,
+            isActiveBranchVersion: Boolean
         },
         data () {
             return {
@@ -120,12 +124,13 @@
                 'pipelineInfo'
             ]),
             ...mapGetters({
-                hasDraftPipeline: 'atom/hasDraftPipeline'
+                hasDraftPipeline: 'atom/hasDraftPipeline',
+                isTemplate: 'atom/isTemplate'
             }),
             isRollback () {
                 const { baseVersion, releaseVersion } = (this.pipelineInfo ?? {})
                 const isReleaseVersion = this.version === releaseVersion
-                return !(this.isActiveDraft || baseVersion === this.version || (isReleaseVersion && !this.hasDraftPipeline))
+                return !(this.isActiveDraft || baseVersion === this.version || this.isActiveBranchVersion || (isReleaseVersion && !this.hasDraftPipeline))
             },
             operateName () {
                 return this.isRollback
@@ -133,16 +138,26 @@
                     : this.$t('edit')
             },
             draftHintTitle () {
-                return this.hasDraftPipeline ? this.$t('hasDraftTips', [this.draftBaseVersionName]) : this.$t('createDraftTips', [this.versionName])
+                switch (true) {
+                    case this.hasDraftPipeline && this.isActiveBranchVersion:
+                        return this.$t('template.templateCoverWarning')
+                    case this.hasDraftPipeline:
+                        return this.$t('hasDraftTips', [this.draftBaseVersionName])
+                    default:
+                        return this.$t('createDraftTips', [this.versionName])
+                }
             },
             isTemplatePipeline () {
                 return this.pipelineInfo?.instanceFromTemplate ?? false
             }
         },
         methods: {
-            ...mapActions('pipelines', [
-                'rollbackPipelineVersion'
-            ]),
+            ...mapActions({
+                requestPipelineSummary: 'atom/requestPipelineSummary',
+                requestTemplateSummary: 'atom/requestTemplateSummary',
+                rollbackPipelineVersion: 'pipelines/rollbackPipelineVersion',
+                rollbackTemplateVersion: 'templates/rollbackTemplateVersion'
+            }),
             handleClick () {
                 if (this.isRollback) {
                     if (this.isTemplatePipeline) {
@@ -156,7 +171,7 @@
                                         templateId: this.pipelineInfo?.templateId,
                                         curVersionId: this.pipelineInfo?.templateVersion
                                     },
-                                    hash: `#${this.pipelineId}`
+                                    hash: `#${this.rollbackId}`
                                 })
                             }
                         })
@@ -164,7 +179,11 @@
                         this.showDraftConfirmDialog()
                     }
                 } else {
-                    this.goEdit(this.draftVersion ?? this.version)
+                    if (this.isActiveBranchVersion) {
+                        this.showDraftConfirmDialog()
+                    } else {
+                        this.goEdit(this.draftVersion ?? this.version)
+                    }
                 }
             },
             showDraftConfirmDialog () {
@@ -176,26 +195,30 @@
             async rollback () {
                 try {
                     this.loading = true
-                    const { version, versionName } = await this.rollbackPipelineVersion({
-                        ...this.$route.params,
-                        version: this.version
-                    })
-                    this.$store.commit(`atom/${UPDATE_PIPELINE_INFO}`, {
-                        version,
-                        versionName,
-                        baseVersion: this.version,
-                        baseVersionName: this.versionName,
-                        canDebug: true,
-                        canRelease: true
-                    })
 
-                    if (version) {
-                        this.goEdit(version)
+                    let res
+
+                    if (this.isTemplate) {
+                        res = await this.rollbackTemplateVersion({
+                            ...this.$route.params,
+                            version: this.version
+                        })
+                        await this.requestTemplateSummary(this.$route.params)
+                    } else {
+                        res = await this.rollbackPipelineVersion({
+                            ...this.$route.params,
+                            version: this.version
+                        })
+                        await this.requestPipelineSummary(this.$route.params)
+                    }
+
+                    if (res.version) {
+                        this.goEdit(res.version)
                     }
                 } catch (error) {
                     this.handleError(error, {
                         projectId: this.projectId,
-                        resourceCode: this.pipelineId,
+                        resourceCode: this.rollbackId,
                         action: this.$permissionResourceAction.EDIT
                     })
                 } finally {
@@ -203,16 +226,26 @@
                 }
             },
             goEdit (version) {
-                this.$router.push({
-                    name: 'pipelinesEdit',
-                    params: {
-                        ...this.$route.params,
-                        version
-                    },
-                    query: {
-                        tab: pipelineTabIdMap[this.$route.params.type] ?? 'pipeline'
-                    }
-                })
+                if (this.isTemplate) {
+                    this.$router.push({
+                        name: 'templateEdit',
+                        params: {
+                            ...this.$route.params,
+                            version: version
+                        }
+                    })
+                } else {
+                    this.$router.push({
+                        name: 'pipelinesEdit',
+                        params: {
+                            ...this.$route.params,
+                            version
+                        },
+                        query: {
+                            tab: pipelineTabIdMap[this.$route.params.type] ?? 'pipeline'
+                        }
+                    })
+                }
             }
         }
     }
@@ -239,5 +272,12 @@
     }
     .draft-hint-content {
         text-align: center;
+        &.is-active-branch-version {
+            background: #F5F6FA;
+            padding: 16px 12px;
+            margin: 0 8px;
+            border-radius: 2px;
+            text-align: left;
+        }
     }
 </style>

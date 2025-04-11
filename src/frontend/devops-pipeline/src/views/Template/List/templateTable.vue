@@ -26,10 +26,17 @@
             <template slot-scope="{ row }">
                 <div
                     class="template-name select-text"
-                    @click="goEdit(row)"
+                    @click="goTemplateOverview(row, 'instanceList')"
                 >
-                    <img :src="row.logoUrl">
-                    <span>{{ row.name }}</span>
+                    <span
+                        class="img-icon"
+                    >
+                        <img
+                            v-if="row.logoUrl"
+                            :src="row.logoUrl"
+                        />
+                    </span>
+                    <span :title="row.name">{{ row.name }}</span>
                     <img
                         v-if="row.enablePac"
                         src="../../../images/pacIcon.png"
@@ -53,10 +60,14 @@
             :width="tableWidthMap.type"
             :label="$t('template.type')"
             prop="type"
-            :filters="sourceFilters"
+        >
+            <!-- :filters="sourceFilters"
             :filter-method="sourceFilterMethod"
-            :filter-multiple="false"
-        ></bk-table-column>
+            :filter-multiple="false" -->
+            <template slot-scope="{ row }">
+                <span>{{ TEMPLATE_TYPE[row.type] || '--' }}</span>
+            </template>
+        </bk-table-column>
         <bk-table-column
             v-if="allRenderColumnMap.lastedVersion"
             :width="tableWidthMap.lastedVersion"
@@ -72,17 +83,37 @@
             :width="tableWidthMap.source"
             :label="$t('template.source')"
             prop="sourceName"
-        ></bk-table-column>
-        <bk-table-column
+        >
+            <template slot-scope="{ row }">
+                <div class="source-name">
+                    <span>{{ row.sourceName }}</span>
+                    <bk-badge
+                        class="mr40"
+                        dot
+                        :theme="'danger'"
+                        v-if="row.storeFlag"
+                    >
+                        <Logo
+                            size="14"
+                            class="ml5"
+                            name="is-store"
+                        />
+                    </bk-badge>
+                </div>
+            </template>
+        </bk-table-column>
+        <!-- <bk-table-column
             v-if="allRenderColumnMap.debugPipelineCount"
             :width="tableWidthMap.debugPipelineCount"
             :label="$t('template.debugPipelineCount')"
             prop="debugPipelineCount"
         >
             <template slot-scope="{ row }">
-                <span class="select-text">{{ row.debugPipelineCount }}</span>
+                <span class="select-text">
+                    {{ row.debugPipelineCount }}
+                </span>
             </template>
-        </bk-table-column>
+        </bk-table-column> -->
         <bk-table-column
             v-if="allRenderColumnMap.instancePipelineCount"
             :width="tableWidthMap.instancePipelineCount"
@@ -90,7 +121,12 @@
             prop="instancePipelineCount"
         >
             <template slot-scope="{ row }">
-                <span class="select-text">{{ row.debugPipelineCount }}</span>
+                <span
+                    class="select-text"
+                    @click="() => row.instancePipelineCount && goTemplateOverview(row, 'instanceList')"
+                >
+                    {{ row.instancePipelineCount }}
+                </span>
             </template>
         </bk-table-column>
         <bk-table-column
@@ -122,7 +158,7 @@
                 class="template-operate"
             >
                 <span
-                    @click="toInstanceList(row)"
+                    @click="goInstanceEntry(row)"
                     :class="['action', row.canEdit ? 'create-permission' : 'not-create-permission']"
                 >
                     <span v-if="row.type === 'PIPELINE'">
@@ -149,210 +185,228 @@
     </bk-table>
 </template>
 
-<script>
+<script setup>
+    import { onMounted, ref, computed, defineProps } from 'vue'
     import ExtMenu from './extMenu'
+    import Logo from '@/components/Logo'
     import TemplateEmpty from '@/components/common/exception'
-    import {
-        RESOURCE_ACTION,
-        TEMPLATE_RESOURCE_ACTION
-    } from '@/utils/permission'
+    import UseInstance from '@/hook/useInstance'
     import {
         TEMPLATE_TABLE_COLUMN_CACHE,
         CACHE_TEMPLATE_TABLE_WIDTH_MAP
-    } from '@/store/constants'
+    } from '@/store/modules/templates/constants'
     import { convertTime } from '@/utils/util'
 
-    export default {
-        components: {
-            ExtMenu,
-            TemplateEmpty
+    const { proxy, i18n } = UseInstance()
+    defineProps({
+        data: {
+            type: Array,
+            default: () => []
         },
-        props: {
-            data: {
-                type: Array,
-                default: () => []
-            },
-            isLoading: {
-                type: Boolean,
-                default: false
-            },
-            pagination: {
-                type: Object,
-                default: () => ({
-                    current: 1,
-                    count: 6,
-                    limit: 20
-                })
-            }
+        isLoading: {
+            type: Boolean,
+            default: false
         },
-        data () {
-            return {
-                sourceFilters: [
-                    { text: '流水线模板', value: 'PIPELINE' },
-                    { text: 'Stage模板', value: 'STAGE' },
-                    { text: 'Job模板', value: 'JOB' },
-                    { text: 'Step模板', value: 'STEP' }
-                ],
-                tableSize: 'medium',
-                tableColumn: [],
-                selectedTableColumn: [],
-                tableWidthMap: {}
-            }
-        },
-        computed: {
-            projectId () {
-                return this.$route.params.projectId
-            },
-            TEMPLATE_RESOURCE_ACTION () {
-                return TEMPLATE_RESOURCE_ACTION
-            },
-            RESOURCE_ACTION () {
-                return RESOURCE_ACTION
-            },
-            allRenderColumnMap () {
-                return this.selectedTableColumn.reduce((result, item) => {
-                    result[item.id] = true
-                    return result
-                }, {})
-            }
-        },
-
-        watch: {
-            
-        },
-        mounted () {
-            this.tableColumn = [
-                {
-                    id: 'name',
-                    label: this.$t('template.name'),
-                    disabled: true
-                },
-                {
-                    id: 'desc',
-                    label: this.$t('template.desc')
-                },
-                {
-                    id: 'type',
-                    label: this.$t('template.type')
-                },
-                {
-                    id: 'lastedVersion',
-                    label: this.$t('template.lastedVersion')
-                },
-                {
-                    id: 'source',
-                    label: this.$t('template.source')
-                },
-                {
-                    id: 'debugPipelineCount',
-                    label: this.$t('template.debugPipelineCount')
-                },
-                {
-                    id: 'instancePipelineCount',
-                    label: this.$t('template.instancePipelineCount')
-                },
-                {
-                    id: 'updater',
-                    label: this.$t('template.lastModifiedBy')
-                },
-                {
-                    id: 'updateTime',
-                    label: this.$t('template.lastModifiedDate')
-                },
-                {
-                    id: 'operate',
-                    label: this.$t('operate'),
-                    disabled: true
-                }
-            ]
-            const columnsCache = JSON.parse(localStorage.getItem(TEMPLATE_TABLE_COLUMN_CACHE))
-            if (columnsCache) {
-                this.selectedTableColumn = columnsCache.columns
-                this.tableSize = columnsCache.size
-            } else {
-                this.selectedTableColumn = [
-                    { id: 'name' },
-                    { id: 'desc' },
-                    { id: 'type' },
-                    { id: 'lastedVersion' },
-                    { id: 'source' },
-                    { id: 'debugPipelineCount' },
-                    { id: 'instancePipelineCount' },
-                    { id: 'updater' },
-                    { id: 'updateTime' },
-                    { id: 'operate' }
-                ]
-            }
-            this.tableWidthMap = JSON.parse(localStorage.getItem(CACHE_TEMPLATE_TABLE_WIDTH_MAP)) || {
-                name: 220,
-                desc: 200,
-                type: 100,
-                lastedVersion: 80,
-                source: 80,
-                debugPipelineCount: 80,
-                instancePipelineCount: '',
-                updater: '',
-                updateTime: 100,
-                operate: 96
-            }
-        },
-        methods: {
-            handlePageLimitChange (limit) {
-                this.$emit('limit-change', limit)
-            },
-            handlePageChange (page) {
-                this.$emit('page-change', page)
-            },
-            clearFilter () {
-                this.$emit('clear')
-            },
-            formatTime (row, cell, value) {
-                return convertTime(value)
-            },
-            goEdit (row) {
-                // this.$router.push({
-                //     name: 'pipelinesEdit',
-                //     params: {
-                //         projectId: row.projectId,
-                //         pipelineId: row.pipelineId
-                //     }
-                // })
-            },
-            handleSettingChange ({ fields, size }) {
-                console.log(1111, fields, size)
-                this.selectedTableColumn = fields
-                this.tableSize = size
-                localStorage.setItem(TEMPLATE_TABLE_COLUMN_CACHE, JSON.stringify({
-                    columns: fields,
-                    size
-                }))
-            },
-            handelHeaderDragend (newWidth, oldWidth, column) {
-                this.tableWidthMap[column.property] = newWidth
-                localStorage.setItem(CACHE_TEMPLATE_TABLE_WIDTH_MAP, JSON.stringify(this.tableWidthMap))
-            },
-            sourceFilterMethod (value, row, column) {
-                const property = column.property
-                return row[property] === value
-            }
+        pagination: {
+            type: Object,
+            default: () => ({
+                current: 1,
+                count: 6,
+                limit: 20
+            })
         }
-    }
+    })
+    const emit = defineEmits(['limit-change', 'page-change', 'clear'])
 
+    const TEMPLATE_TRANSLATIONS = {
+        PIPELINE: 'pipelineTemplate',
+        STAGE: 'stageTemplate',
+        JOB: 'jobTemplate',
+        STEP: 'stepTemplate',
+        ALL: 'allTemplate'
+    }
+    const tableSize = ref('medium')
+    const tableColumn = ref([])
+    const selectedTableColumn = ref([])
+    const tableWidthMap = ref({})
+
+    // const sourceFilters = computed(() => ['PIPELINE', 'STAGE', 'JOB', 'STEP'].map(type => ({
+    //     text: i18n.t(TEMPLATE_TRANSLATIONS[type]),
+    //     value: type
+    // })))
+    const TEMPLATE_TYPE = computed(() => {
+        const types = {}
+        Object.keys(TEMPLATE_TRANSLATIONS).forEach(type => {
+            types[type] = i18n.t(TEMPLATE_TRANSLATIONS[type])
+        })
+        return types
+    })
+    const allRenderColumnMap = computed(() => {
+        return selectedTableColumn.value.reduce((result, item) => {
+            result[item.id] = true
+            return result
+        }, {})
+    })
+
+    onMounted(() => {
+        tableColumn.value = [
+            {
+                id: 'name',
+                label: i18n.t('template.name'),
+                disabled: true
+            },
+            {
+                id: 'desc',
+                label: i18n.t('template.desc')
+            },
+            {
+                id: 'type',
+                label: i18n.t('template.type')
+            },
+            {
+                id: 'lastedVersion',
+                label: i18n.t('template.lastedVersion')
+            },
+            {
+                id: 'source',
+                label: i18n.t('template.source')
+            },
+            {
+                id: 'debugPipelineCount',
+                label: i18n.t('template.debugPipelineCount')
+            },
+            {
+                id: 'instancePipelineCount',
+                label: i18n.t('template.instancePipelineCount')
+            },
+            {
+                id: 'updater',
+                label: i18n.t('template.lastModifiedBy')
+            },
+            {
+                id: 'updateTime',
+                label: i18n.t('template.lastModifiedDate')
+            },
+            {
+                id: 'operate',
+                label: i18n.t('operate'),
+                disabled: true
+            }
+        ]
+        const columnsCache = JSON.parse(localStorage.getItem(TEMPLATE_TABLE_COLUMN_CACHE))
+        if (columnsCache) {
+            selectedTableColumn.value = columnsCache.columns
+            tableSize.value = columnsCache.size
+        } else {
+            selectedTableColumn.value = [
+                { id: 'name' },
+                { id: 'desc' },
+                { id: 'type' },
+                { id: 'lastedVersion' },
+                { id: 'source' },
+                { id: 'debugPipelineCount' },
+                { id: 'instancePipelineCount' },
+                { id: 'updater' },
+                { id: 'updateTime' },
+                { id: 'operate' }
+            ]
+        }
+        tableWidthMap.value = JSON.parse(localStorage.getItem(CACHE_TEMPLATE_TABLE_WIDTH_MAP)) || {
+            name: 220,
+            desc: 200,
+            type: 100,
+            lastedVersion: 80,
+            source: 100,
+            debugPipelineCount: 80,
+            instancePipelineCount: '',
+            updater: '',
+            updateTime: 100,
+            operate: 96
+        }
+    })
+
+    function handlePageLimitChange (limit) {
+        emit('limit-change', limit)
+    }
+    function handlePageChange (page) {
+        emit('page-change', page)
+    }
+    function clearFilter () {
+        emit('clear')
+    }
+    function formatTime (row, cell, value) {
+        return convertTime(value)
+    }
+    function goTemplateOverview (row, type) {
+        proxy.$router.push({
+            name: 'TemplateOverview',
+            params: {
+                templateId: row.id,
+                version: row.releasedVersion,
+                type,
+                templateType: row.type
+            }
+        })
+    }
+    function goInstanceEntry (row) {
+        proxy.$router.push({
+            name: 'instanceEntry',
+            params: {
+                templateId: row.id,
+                version: row.releaseVersion,
+                type: 'create'
+            }
+        })
+    }
+    function handleSettingChange ({ fields, size }) {
+        selectedTableColumn.value = fields
+        tableSize.value = size
+        localStorage.setItem(TEMPLATE_TABLE_COLUMN_CACHE, JSON.stringify({
+            columns: fields,
+            size
+        }))
+    }
+    function handelHeaderDragend (newWidth, oldWidth, column) {
+        tableWidthMap.value[column.property] = newWidth
+        localStorage.setItem(CACHE_TEMPLATE_TABLE_WIDTH_MAP, JSON.stringify(tableWidthMap.value))
+    }
+    // function sourceFilterMethod (value, row, column) {
+    //     const property = column.property
+    //     return row[property] === value
+    // }
 </script>
 
 <style lang="scss">
-@import '@/scss/conf.scss';
 @import '@/scss/mixins/ellipsis';
+@import '@/scss/conf';
 
 .template-name {
     display: flex;
     align-items: center;
-    img {
-        vertical-align: middle;
+    .img-icon {
+        display: inline-block;
+        width: 32px;
+        height: 32px;
         margin-right: 12px;
+
+        img {
+            width: 100%;
+        }
     }
     .pac-code-icon {
         margin: 0 0 0 12px;
+        vertical-align: middle;
+    }
+    span {
+        @include ellipsis();
+    }
+}
+.source-name {
+    display: flex;
+    align-items: center;
+    height: 30px;
+    span {
+        flex-shrink: 0;
     }
 }
 .template-operate {
@@ -363,11 +417,12 @@
         display: inline-block;
         text-align: center;
         min-width: 62px;
+        color: $primaryColor;
     }
 }
 
 .select-text {
-    color: #3A84FF;
+    color: $primaryColor;
     cursor: pointer;
 }
 

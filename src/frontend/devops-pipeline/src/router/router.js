@@ -29,12 +29,14 @@ const pipelinesGroup = () => import(/* webpackChunkName: "pipelinesGroup" */'../
 const pipelinesAudit = () => import(/* webpackChunkName: "pipelinesAudit" */'../views/list/audit')
 
 // 流水线模板
-const templateList = () => import(/* webpackChunkName: "pipelinesTemplate" */'../views/Template/list/')
-// const pipelinesTemplate = () => import(/* webpackChunkName: "pipelinesTemplate" */'../views/list/template')
-// const templateEntry = () => import(/* webpackChunkName: "pipelinesTemplate" */'../views/template/')
-// const templateEdit = () => import(/* webpackChunkName: "pipelinesTemplate" */'../views/template/edit.vue')
+const TemplateList = () => import(/* webpackChunkName: "pipelinesTemplate" */'../views/Template/List/')
+const templateGroup = () => import(/* webpackChunkName: "pipelinesTemplate" */'../views/Template/')
+const templateEntry = () => import(/* webpackChunkName: "pipelinesTemplate" */'../views/Template/TemplateEntry')
+const TemplateOverview = () => import(/* webpackChunkName: "pipelinesTemplate" */'../views/Template/TemplateOverview')
+const templateEdit = () => import(/* webpackChunkName: "pipelinesTemplate" */'../views/Template/edit.vue')
+const InstanceEntry = () => import(/* webpackChunkName: "pipelinesTemplate" */'../views/Template/Instance/InstanceEntry.vue')
+
 // const templateSetting = () => import(/* webpackChunkName: "pipelinesTemplate" */'../views/template/setting.vue')
-// const templateInstance = () => import(/* webpackChunkName: "pipelinesTemplate" */'../views/template/instance.vue')
 // const templateInstanceCreate = () => import(/* webpackChunkName: "pipelinesTemplate" */'../views/template/instance_create.vue')
 // const templatePermission = () => import(/* webpackChunkName: "pipelinesTemplate" */'../views/template/permission.vue')
 
@@ -109,7 +111,14 @@ const routes = [
                     {
                         path: 'template',
                         name: 'template',
-                        component: templateList
+                        component: templateGroup,
+                        children: [
+                            {
+                                path: ':viewId?',
+                                name: 'TemplateManageList',
+                                component: TemplateList
+                            }
+                        ]
                     },
                     {
                         path: 'atomManage',
@@ -136,37 +145,43 @@ const routes = [
                     }
                 ]
             },
-            // {
-            //     path: 'template/:templateId',
-            //     component: templateEntry,
-            //     children: [
-            //         {
-            //             path: 'edit',
-            //             name: 'templateEdit',
-            //             component: templateEdit
-            //         },
-            //         {
-            //             path: 'setting',
-            //             name: 'templateSetting',
-            //             component: templateSetting
-            //         },
-            //         {
-            //             path: 'instance',
-            //             name: 'templateInstance',
-            //             component: templateInstance
-            //         },
-            //         {
-            //             path: 'createInstance/:curVersionId/:pipelineName?',
-            //             name: 'createInstance',
-            //             component: templateInstanceCreate
-            //         },
-            //         {
-            //             path: 'permission',
-            //             name: 'templatePermission',
-            //             component: templatePermission
-            //         }
-            //     ]
-            // },
+            {
+                path: 'template/:templateId/:version?',
+                component: templateEntry,
+                children: [
+                    {
+                        path: 'edit',
+                        name: 'templateEdit',
+                        component: templateEdit
+                    },
+                    // {
+                    //     path: 'createInstance/:curVersionId/:pipelineName?',
+                    //     name: 'createInstance',
+                    //     component: templateInstanceCreate
+                    // },
+                    // {
+                    //     path: 'setting',
+                    //     name: 'templateSetting',
+                    //     component: templateSetting
+                    // },
+                    // {
+                    //     path: 'permission',
+                    //     name: 'templatePermission',
+                    //     component: templatePermission
+                    // },
+                    {
+                        path: ':type?',
+                        name: 'TemplateOverview',
+                        component: TemplateOverview
+                    },
+                    {
+                        // 模板实例化创建 / 实例化升级
+                        path: 'instance/:type',
+                        name: 'instanceEntry',
+                        component: InstanceEntry
+                    }
+                ]
+            },
             {
                 // docker console
                 path: 'dockerConsole',

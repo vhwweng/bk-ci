@@ -99,7 +99,7 @@
                             class="pipeline-history-version-operate"
                         >
                             <bk-button
-                                v-if="props.row.isDraft"
+                                v-if="props.row.isDraft && !isTemplate"
                                 text
                                 @click="goDebugRecords"
                             >
@@ -109,11 +109,13 @@
                                 v-if="props.row.canRollback"
                                 :has-permission="canEdit"
                                 :version="props.row.version"
-                                :pipeline-id="$route.params.pipelineId"
+                                :rollback-id="isTemplate ? $route.params.ptemplateId : $route.params.pipelineId"
                                 :project-id="$route.params.projectId"
                                 :version-name="props.row.versionName"
                                 :draft-base-version-name="draftBaseVersionName"
                                 :is-active-draft="props.row.isDraft"
+                                :is-active-branch-version="props.row.isBranchVersion"
+                                :draft-creator="props.row?.creator"
                             />
                             <version-diff-entry
                                 v-if="props.row.version !== releaseVersion"
@@ -139,7 +141,6 @@
 <script>
     import Logo from '@/components/Logo'
     import EmptyException from '@/components/common/exception'
-    import { UPDATE_PIPELINE_INFO } from '@/store/modules/atom/constants'
     import { VERSION_STATUS_ENUM } from '@/utils/pipelineConst'
     import { convertTime, navConfirm } from '@/utils/util'
     import SearchSelect from '@blueking/search-select'
@@ -173,13 +174,14 @@
         computed: {
             ...mapState('atom', ['pipelineInfo']),
             ...mapGetters({
-                draftBaseVersionName: 'atom/getDraftBaseVersionName'
+                draftBaseVersionName: 'atom/getDraftBaseVersionName',
+                isTemplate: 'atom/isTemplate'
             }),
             releaseVersion () {
                 return this.pipelineInfo?.releaseVersion
             },
             canEdit () {
-                return this.pipelineInfo?.permissions?.canEdit
+                return this.pipelineInfo?.permissions?.canEdit ?? this.pipelineInfo?.canEdit
             },
             columns () {
                 return [{
@@ -249,10 +251,14 @@
             window.__bk_zIndex_manager.zIndex = this.preZIndex
         },
         methods: {
-            ...mapActions('pipelines', [
-                'requestPipelineVersionList',
-                'deletePipelineVersion'
-            ]),
+            ...mapActions({
+                requestPipelineSummary: 'atom/requestPipelineSummary',
+                requestPipelineVersionList: 'pipelines/requestPipelineVersionList',
+                requestTemplateVersionList: 'pipelines/requestTemplateVersionList',
+                deletePipelineVersion: 'pipelines/deletePipelineVersion',
+                deleteTempalteVersion: 'templates/deleteTempalteVersion',
+                requestTemplateSummary: 'atom/requestTemplateSummary'
+            }),
             handleShown () {
                 this.handlePageChange(1)
             },
@@ -283,12 +289,14 @@
                 })
             },
             async getPipelineVersions (page) {
-                const { projectId, pipelineId } = this.$route.params
-                const res = await this.requestPipelineVersionList({
+                const { projectId, pipelineId, templateId } = this.$route.params
+                const dataSource = this.isTemplate ? this.requestTemplateVersionList : this.requestPipelineVersionList
+                const param = this.isTemplate ? { templateId } : { pipelineId }
+                const res = await dataSource({
                     projectId,
-                    pipelineId,
                     page,
                     pageSize: this.pagination.limit,
+                    ...param,
                     ...this.filterQuery
                 })
                 Object.assign(this.pagination, {
@@ -309,34 +317,32 @@
             },
             async deleteVersion (row) {
                 if (this.releaseVersion !== row.version) {
-                    const { projectId, pipelineId } = this.$route.params
+                    const { projectId, pipelineId, templateId } = this.$route.params
                     const content = this.$t('deleteVersionConfirm', [row.versionName])
                     const confirm = await navConfirm({
                         content,
                         type: 'error',
                         theme: 'danger'
                     })
+                    const params = {
+                        projectId,
+                        version: row.version,
+                        ...(this.isTemplate ? { templateId } : { pipelineId })
+                    }
                     if (confirm) {
                         try {
-                            await this.deletePipelineVersion({
-                                projectId,
-                                pipelineId,
-                                version: row.version
-                            })
+                            if (this.isTemplate) {
+                                await this.deleteTempalteVersion(params)
+                                this.requestTemplateSummary(this.$route.params)
+                            } else {
+                                await this.deletePipelineVersion(params)
+                                this.requestPipelineSummary(this.$route.params)
+                            }
                             this.handlePageChange(1)
                             this.$showTips({
                                 message: this.$t('delete') + this.$t('version') + this.$t('success'),
                                 theme: 'success'
                             })
-
-                            if (row.isDraft) { // 删除草稿时需要更新pipelineInfo
-                                this.$store.commit(`atom/${UPDATE_PIPELINE_INFO}`, {
-                                    version: this.pipelineInfo?.releaseVersion,
-                                    versionName: this.pipelineInfo?.releaseVersionName,
-                                    canDebug: false,
-                                    canRelease: false
-                                })
-                            }
                         } catch (err) {
                             this.$showTips({
                                 message: err.message || err,

@@ -22,6 +22,7 @@
  */
 
 import Vue from 'vue'
+import VueI18n from 'vue-i18n'
 import App from './App'
 import enClass from './directives/en-class'
 import enStyle from './directives/en-style'
@@ -57,6 +58,7 @@ const { lang, i18n, setLocale } = createLocale(
 const { pipelineDocs } = createDocs(lang, window.BK_CI_VERSION)
 const isInIframe = window.self !== window.parent
 
+Vue.use(VueI18n, { bridge: true })
 Vue.use(focus)
 Vue.use(enClass)
 Vue.use(enStyle)
@@ -66,7 +68,6 @@ Vue.use(PermissionDirective(handlePipelineNoPermission))
 Vue.use(BkPermission, {
     i18n
 })
-
 Vue.use(VeeValidate, {
     i18nRootKey: 'validations', // customize the root path for validation messages.
     i18n,
@@ -117,8 +118,8 @@ if (!isInIframe) {
 global.pipelineVue = new Vue({
     el: "#app",
     router: createRouter(store, isInIframe),
-    i18n,
     store,
+    i18n,
     components: {
         App
     },
