@@ -230,8 +230,8 @@
     import LocaleSwitcher from '../LocaleSwitcher/index.vue'
     import Logo from '../Logo/index.vue'
     import ProjectDialog from '../ProjectDialog/index.vue'
-    import SystemLog from '../SystemLog/index.vue'
     import DevopsSelect from '../Select/index.vue'
+    import SystemLog from '../SystemLog/index.vue'
     import User from '../User/index.vue'
     import NavMenu from './NavMenu.vue'
 
