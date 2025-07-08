@@ -1,19 +1,9 @@
 {
-    "name": "common-locale",
+    "name": "common-lib",
     "version": "1.0.1",
-    "description": "common-locale",
+    "description": "common-lib",
     "private": true,
     "author": "",
-    "dependencies": {
-        "axios": "0.30.0",
-        "bk-magic-vue": "2.5.10-beta.12",
-        "js-cookie": "^3.0.5",
-        "vue-i18n": "~8.18.1"
-    },
-    "peerDependencies": {
-        "vue": "~2.7.16",
-        "axios": "0.30.0"
-    },
     "devDependencies": {
         "@babel/core": "^7.15.8",
         "@babel/eslint-parser": "^7.15.8",
