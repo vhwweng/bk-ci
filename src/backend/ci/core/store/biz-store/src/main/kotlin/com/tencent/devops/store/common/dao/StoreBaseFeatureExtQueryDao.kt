@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -59,12 +59,16 @@ class StoreBaseFeatureExtQueryDao {
     fun queryStoreBaseFeatureExt(
         dslContext: DSLContext,
         storeCode: String,
-        storeType: StoreTypeEnum
+        storeType: StoreTypeEnum,
+        fieldNames: Set<String>? = null
     ): Result<TStoreBaseFeatureExtRecord> {
         with(TStoreBaseFeatureExt.T_STORE_BASE_FEATURE_EXT) {
             val conditions = mutableListOf<Condition>()
             conditions.add(STORE_TYPE.eq(storeType.type.toByte()))
             conditions.add(STORE_CODE.eq(storeCode))
+            if (!fieldNames.isNullOrEmpty()) {
+                conditions.add(FIELD_NAME.`in`(fieldNames))
+            }
             return dslContext.selectFrom(this)
                 .where(conditions)
                 .fetch()

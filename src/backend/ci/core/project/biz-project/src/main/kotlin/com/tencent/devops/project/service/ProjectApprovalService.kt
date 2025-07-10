@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -260,13 +260,7 @@ class ProjectApprovalService @Autowired constructor(
                 )
         // 属性只能变更前端展示的,其他的字段由op变更
         val projectProperties = projectInfo.properties?.let { JsonUtil.to(it, ProjectProperties::class.java) }
-        val updateProjectProperties = if (projectApprovalInfo.properties != null) {
-            projectProperties?.copy(
-                pipelineDialect = projectApprovalInfo.properties!!.pipelineDialect
-            )
-        } else {
-            projectProperties
-        }
+        val updateProjectProperties = projectApprovalInfo.properties?.let { projectProperties?.userCopy(it) }
         val projectUpdateInfo = with(projectApprovalInfo) {
             ProjectUpdateInfo(
                 projectName = projectName,

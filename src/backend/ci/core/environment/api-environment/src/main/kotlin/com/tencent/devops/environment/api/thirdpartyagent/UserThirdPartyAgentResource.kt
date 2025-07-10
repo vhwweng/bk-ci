@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -44,16 +44,16 @@ import com.tencent.devops.environment.pojo.thirdpartyagent.ThirdPartyAgentStatus
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
-import javax.ws.rs.Consumes
-import javax.ws.rs.DELETE
-import javax.ws.rs.GET
-import javax.ws.rs.HeaderParam
-import javax.ws.rs.POST
-import javax.ws.rs.Path
-import javax.ws.rs.PathParam
-import javax.ws.rs.Produces
-import javax.ws.rs.QueryParam
-import javax.ws.rs.core.MediaType
+import jakarta.ws.rs.Consumes
+import jakarta.ws.rs.DELETE
+import jakarta.ws.rs.GET
+import jakarta.ws.rs.HeaderParam
+import jakarta.ws.rs.POST
+import jakarta.ws.rs.Path
+import jakarta.ws.rs.PathParam
+import jakarta.ws.rs.Produces
+import jakarta.ws.rs.QueryParam
+import jakarta.ws.rs.core.MediaType
 
 @Tag(name = "USER_ENVIRONMENT_THIRD_PARTY_AGENT", description = "第三方构建机资源")
 @Path("/user/environment/thirdPartyAgent")
@@ -333,6 +333,24 @@ interface UserThirdPartyAgentResource {
         @Parameter(description = "Node Hash ID", required = true)
         @PathParam("nodeHashId")
         nodeHashId: String,
+        @Parameter(description = "第几页", required = false)
+        @QueryParam("page")
+        page: Int?,
+        @Parameter(description = "每页条数", required = false)
+        @QueryParam("pageSize")
+        pageSize: Int?
+    ): Result<Page<AgentBuildDetail>>
+
+    @Operation(summary = "获取构建机最近执行记录")
+    @GET
+    @Path("/projects/{projectId}/listLatestBuildPipelines")
+    fun listLatestBuildPipelines(
+        @Parameter(description = "用户ID", required = true, example = AUTH_HEADER_USER_ID_DEFAULT_VALUE)
+        @HeaderParam(AUTH_HEADER_USER_ID)
+        userId: String,
+        @Parameter(description = "项目ID", required = true)
+        @PathParam("projectId")
+        projectId: String,
         @Parameter(description = "第几页", required = false)
         @QueryParam("page")
         page: Int?,

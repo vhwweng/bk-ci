@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -62,6 +62,8 @@ data class PipelineAgentStartupEvent(
     val allNodeConcurrency: Int? = null,
     // 用来计算 dispatch 排队过程中的耗时
     var dispatchQueueStartTimeMilliSecond: Long? = null,
+    // job超时时间
+    val jobTimeoutMinutes: Int? = null,
     override var actionType: ActionType = ActionType.REFRESH,
     override var delayMills: Int = 0
 ) : IPipelineEvent(

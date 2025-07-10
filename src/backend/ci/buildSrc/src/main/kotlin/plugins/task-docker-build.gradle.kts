@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -46,10 +46,7 @@ if (toImage.isNullOrBlank() || (toImageRepo.isNullOrBlank() && toImageTag.isNull
     val finalJvmFlags = mutableListOf(
         "-server",
         "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8080",
-        "-Xloggc:/data/workspace/$service/jvm/gc-%t.log",
-        "-XX:+PrintTenuringDistribution",
-        "-XX:+PrintGCDetails",
-        "-XX:+PrintGCDateStamps",
+        "-Xlog:gc*,gc+age=trace:file=/data/workspace/$service/jvm/gc-%t.log:time,level,tags",
         "-XX:MaxGCPauseMillis=100",
         "-XX:+UseG1GC",
         "-XX:NativeMemoryTracking=summary",

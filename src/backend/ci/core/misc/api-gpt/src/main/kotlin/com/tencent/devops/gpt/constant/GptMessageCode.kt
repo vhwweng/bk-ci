@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -60,6 +60,9 @@ object GptMessageCode {
 
     // 发生错误！插件日志未入库或已清理。
     const val SCRIPT_ERROR_ANALYSIS_CHAT_TASK_LOGS_EMPTY = "scriptErrorAnalysisChatTaskLogsEmpty"
+
+    // 发生错误！请刷新页面后重试。
+    const val SCRIPT_ERROR_ANALYSIS_CHAT_TASK_UNDEFINED = "scriptErrorAnalysisChatTaskUndefined"
 
     // 当前模型忙，请稍后重试
     const val GPT_BUSY = "gptBusy"

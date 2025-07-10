@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -50,6 +50,8 @@ data class PreJob(
     @get:Schema(title = "runs-on")
     @JsonProperty("runs-on")
     val runsOn: Any?,
+    @JsonProperty("show-runs-on")
+    val showRunsOn: Boolean? = null,
     val container: Container?,
     val services: Map<String, Service>? = null,
     @get:Schema(title = "if")

@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -49,9 +49,9 @@ import com.tencent.devops.environment.service.thirdpartyagent.AgentMetricService
 import com.tencent.devops.environment.service.thirdpartyagent.ImportService
 import com.tencent.devops.environment.service.thirdpartyagent.ThirdPartyAgentMgrService
 import com.tencent.devops.environment.service.thirdpartyagent.ThirdPartyAgentPipelineService
+import java.util.concurrent.TimeUnit
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import java.util.concurrent.TimeUnit
 
 @RestResource
 @Suppress("ReturnCount", "ThrowsCount", "MagicNumber")
@@ -122,23 +122,25 @@ class BuildAgentThirdPartyAgentResourceImpl @Autowired constructor(
         secretKey: String,
         heartbeatInfo: ThirdPartyAgentHeartbeatInfo?
     ): Result<AgentStatus> {
-        checkParam(projectId, agentId, secretKey)
-
-        val requestAgentId = agentHeartbeatRequestCache.getIfPresent(agentId)
-        if (requestAgentId != null) {
-            logger.warn("agentHeartbeat|$projectId|$agentId| request too frequently")
-            return Result(1, "request too frequently")
-        } else {
-            val lockKey = "environment:thirdPartyAgent:agentHeartbeatRequestLock_$agentId"
-            val redisLock = RedisLock(redisOperation, lockKey, 1)
-            if (redisLock.tryLock()) {
-                agentHeartbeatRequestCache.put(agentId, agentId)
-            } else {
-                return Result(1, "request too frequently")
-            }
-        }
-
-        return Result(thirdPartyAgentService.heartBeat(projectId, agentId, secretKey, heartbeatInfo))
+        logger.warn("agentHeartbeat|$projectId|$agentId| request is not allowed")
+        return Result(1, "request is not allowed")
+//        checkParam(projectId, agentId, secretKey)
+//
+//        val requestAgentId = agentHeartbeatRequestCache.getIfPresent(agentId)
+//        if (requestAgentId != null) {
+//            logger.warn("agentHeartbeat|$projectId|$agentId| request too frequently")
+//            return Result(1, "request too frequently")
+//        } else {
+//            val lockKey = "environment:thirdPartyAgent:agentHeartbeatRequestLock_$agentId"
+//            val redisLock = RedisLock(redisOperation, lockKey, 1)
+//            if (redisLock.tryLock()) {
+//                agentHeartbeatRequestCache.put(agentId, agentId)
+//            } else {
+//                return Result(1, "request too frequently")
+//            }
+//        }
+//
+//        return Result(thirdPartyAgentService.heartBeat(projectId, agentId, secretKey, heartbeatInfo))
     }
 
     override fun newHeartbeat(

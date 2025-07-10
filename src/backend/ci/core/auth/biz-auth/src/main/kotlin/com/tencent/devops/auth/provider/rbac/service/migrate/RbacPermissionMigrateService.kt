@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -37,7 +37,6 @@ import com.tencent.devops.auth.pojo.dto.PermissionHandoverDTO
 import com.tencent.devops.auth.pojo.enum.AuthMigrateStatus
 import com.tencent.devops.auth.provider.rbac.service.AuthResourceService
 import com.tencent.devops.auth.provider.rbac.service.PermissionGradeManagerService
-import com.tencent.devops.auth.provider.rbac.service.RbacCacheService
 import com.tencent.devops.auth.service.iam.MigrateCreatorFixService
 import com.tencent.devops.auth.service.iam.PermissionMigrateService
 import com.tencent.devops.auth.service.iam.PermissionResourceMemberService
@@ -68,7 +67,7 @@ import java.util.concurrent.Executors
  * rbac迁移服务
  */
 @Suppress("LongParameterList", "ReturnCount")
-class RbacPermissionMigrateService constructor(
+class RbacPermissionMigrateService(
     private val client: Client,
     private val migrateResourceService: MigrateResourceService,
     private val migrateV3PolicyService: MigrateV3PolicyService,
@@ -82,7 +81,6 @@ class RbacPermissionMigrateService constructor(
     private val dslContext: DSLContext,
     private val authMigrationDao: AuthMigrationDao,
     private val authMonitorSpaceDao: AuthMonitorSpaceDao,
-    private val cacheService: RbacCacheService,
     private val permissionResourceMemberService: PermissionResourceMemberService,
     private val migrateResourceAuthorizationService: MigrateResourceAuthorizationService,
     private val migrateResourceGroupService: MigrateResourceGroupService
@@ -461,6 +459,8 @@ class RbacPermissionMigrateService constructor(
                         watcher = watcher
                     )
                 }
+
+                else -> {}
             }
             // 修改项目可授权人员范围
             if (projectInfo.subjectScopes == null || projectInfo.subjectScopes!!.isEmpty()) {

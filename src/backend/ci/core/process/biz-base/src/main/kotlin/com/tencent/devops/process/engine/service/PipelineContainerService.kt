@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -579,7 +579,7 @@ class PipelineContainerService @Autowired constructor(
         container.startVMTaskSeq = startVMTaskSeq
 
         // 构建矩阵永远跟随stage重试，在需要重试的stage中，单独增加重试记录
-        if (context.needRerunStage(stage = stage) && container.matrixGroupFlag == true) {
+        if (container.matrixGroupFlag == true && !context.needSkipWhenStageFailRetry(stage = stage)) {
             container.retryFreshMatrixOption()
             cleanContainersInMatrixGroup(
                 transactionContext = dslContext,

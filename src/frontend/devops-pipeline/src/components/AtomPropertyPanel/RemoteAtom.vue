@@ -21,8 +21,8 @@
 
 <script>
     import { mapActions } from 'vuex'
-    import atomMixin from './atomMixin'
     import validMixins from '../validMixins'
+    import atomMixin from './atomMixin'
     import AtomOutput from './AtomOutput'
     export default {
         name: 'remote-atom',
@@ -31,7 +31,8 @@
         },
         mixins: [atomMixin, validMixins],
         props: {
-            atom: Object
+            atom: Object,
+            isInstanceTemplate: Boolean
         },
         data () {
             return {
@@ -72,6 +73,7 @@
                 const currentUserInfo = this.$userInfo || {}
                 const atomDisabled = this.disabled || false
                 const envConf = await this.getEnvConf()
+                const query = this.$route.query || {}
                 this.loading = false
                 const iframe = document.getElementById('atom-iframe').contentWindow
                 iframe.postMessage({
@@ -82,9 +84,11 @@
                     currentUserInfo,
                     envConf,
                     atomDisabled,
+                    isInstanceTemplate: this.isInstanceTemplate,
                     hostInfo: {
                         ...this.$route.params
-                    }
+                    },
+                    query
                 }, '*')
             },
             receiveMsgFromIframe (e) {
@@ -93,7 +97,7 @@
                 if (e.data.atomValue) {
                     console.log(e.data, this.element?.id, 'dataFromIframeAtom')
                     // 如果不含有elementId(旧版本的自定义插件)， 或者elementId与当前id相同，则更新
-                    if (!e.data.elementId || (e.data.elementId && e.data.elementId === this.element?.id)) {
+                    if (this.compareIframeSource(e) || (e.data.elementId && e.data.elementId === this.element?.id)) {
                         this.setPipelineEditing(true)
                         this.handleUpdateWholeAtomInput(e.data.atomValue)
                     } else {
@@ -104,6 +108,9 @@
                 } else if (e.data.iframeHeight) {
                     this.iframeHeight = parseInt(e.data.iframeHeight)
                 }
+            },
+            compareIframeSource (e) {
+                return (!e.data.elementId && e.source.location.href === this.src)
             },
             async getEnvConf () {
                 let env = {}

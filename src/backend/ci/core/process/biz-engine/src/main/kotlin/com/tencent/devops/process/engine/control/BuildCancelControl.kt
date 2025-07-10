@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -116,6 +116,11 @@ class BuildCancelControl @Autowired constructor(
         // 已经结束的构建，不再受理，抛弃消息
         if (buildInfo == null || buildInfo.status.isFinish()) {
             LOG.info("[$$buildId|${event.source}|REPEAT_CANCEL_EVENT|${event.status}| abandon!")
+            return false
+        }
+        // 执行次数不匹配的时间直接丢弃，防止异步延迟
+        if (event.executeCount?.let { buildInfo.executeCount != it } == true) {
+            LOG.info("[$$buildId|${event.source}|EXECUTE_COUNT_NOT_MATCH|${event.status}| abandon!")
             return false
         }
 

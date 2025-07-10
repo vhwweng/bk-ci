@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -101,6 +101,10 @@ export const errorTypeMap = [
     {
         title: 'pluginError',
         icon: 'error-plugin'
+    },
+    {
+        title: 'containerError',
+        icon: 'error-node'
     }
 ]
 
@@ -296,4 +300,12 @@ export const VERSION_STATUS_ENUM = {
     COMMITTING: 'COMMITTING',
     BRANCH: 'BRANCH',
     RELEASED: 'RELEASED'
+}
+
+export const TARGET_ACTION_ENUM = {
+    COMMIT_TO_MASTER: 'COMMIT_TO_MASTER', // 提交到默认分支
+    COMMIT_TO_SOURCE_BRANCH: 'COMMIT_TO_SOURCE_BRANCH', // 提交到Dev(源分支)分支
+    COMMIT_TO_SOURCE_BRANCH_AND_REQUEST_MERGE: 'COMMIT_TO_SOURCE_BRANCH_AND_REQUEST_MERGE', // 提交到Dev(源分支)并创建MR
+    CHECKOUT_BRANCH_AND_REQUEST_MERGE: 'CHECKOUT_BRANCH_AND_REQUEST_MERGE', // 新增分支并创建 MR 到默认分支
+    COMMIT_TO_BRANCH: 'COMMIT_TO_BRANCH' // 提交到指定分支
 }

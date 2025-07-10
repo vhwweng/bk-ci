@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -244,6 +244,24 @@ class UserThirdPartyAgentResourceImpl @Autowired constructor(
                 nodeHashId = nodeHashId,
                 status = null,
                 pipelineId = null,
+                page = page,
+                pageSize = pageSize
+            )
+        )
+    }
+
+    override fun listLatestBuildPipelines(
+        userId: String,
+        projectId: String,
+        page: Int?,
+        pageSize: Int?
+    ): Result<Page<AgentBuildDetail>> {
+        checkUserId(userId)
+        checkProjectId(projectId)
+        return Result(
+            thirdPartyAgentService.listLatestBuildPipelines(
+                userId = userId,
+                projectId = projectId,
                 page = page,
                 pageSize = pageSize
             )

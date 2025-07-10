@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -151,7 +151,7 @@ class BuildStartControl @Autowired constructor(
     }
 
     private fun PipelineBuildStartEvent.retry() {
-        LOG.info("ENGINE|$buildId|$source|$pipelineId|RETRY_TO_LOCK")
+        LOG.info("ENGINE|$buildId|$source|$pipelineId|RETRY_TO_START_LOCK")
         this.delayMills = DEFAULT_DELAY
         pipelineEventDispatcher.dispatch(this)
     }
@@ -307,7 +307,7 @@ class BuildStartControl @Autowired constructor(
                         debug = buildInfo.debug
                     )
                 )
-                broadcastStartEvent(buildInfo)
+                broadcastStartEvent(buildInfo, setting)
             } else {
                 broadcastQueueEvent()
             }
@@ -497,7 +497,7 @@ class BuildStartControl @Autowired constructor(
         }
     }
 
-    private fun PipelineBuildStartEvent.broadcastStartEvent(buildInfo: BuildInfo) {
+    private fun PipelineBuildStartEvent.broadcastStartEvent(buildInfo: BuildInfo, pipelineSetting: PipelineSetting?) {
         pipelineEventDispatcher.dispatch(
             // 广播构建即将启动消息给订阅者
             PipelineBuildStartBroadCastEvent(
@@ -519,7 +519,13 @@ class BuildStartControl @Autowired constructor(
                 actionType = ActionType.START,
                 executeCount = executeCount,
                 buildStatus = BuildStatus.RUNNING.name,
-                type = PipelineBuildStatusBroadCastEventType.BUILD_START
+                type = PipelineBuildStatusBroadCastEventType.BUILD_START,
+                labels = mapOf(
+                    "startTime" to LocalDateTime.now().timestampmilli().toString(),
+                    "trigger" to buildInfo.trigger,
+                    "triggerUser" to buildInfo.triggerUser,
+                    "pipelineName" to (pipelineSetting?.pipelineName ?: "")
+                )
             )
         )
     }
@@ -773,7 +779,8 @@ class BuildStartControl @Autowired constructor(
             pipelineEventDispatcher.dispatch(
                 PipelineBuildCancelEvent(
                     source = TAG, projectId = projectId, pipelineId = pipelineId,
-                    userId = userId, buildId = buildId, status = BuildStatus.UNEXEC
+                    userId = userId, buildId = buildId, status = BuildStatus.UNEXEC,
+                    executeCount = executeCount
                 )
             )
             return // model不存在直接取消构建

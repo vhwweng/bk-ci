@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -315,10 +315,10 @@ class TGitMrTriggerHandler(
                 changeFiles = changeFiles.toSet(),
                 enableThirdFilter = enableThirdFilter,
                 thirdUrl = thirdUrl,
-                thirdSecretToken = thirdSecretToken,
-                gitScmService = gitScmService,
+                secretToken = lazy { gitScmService.getCredential(projectId, thirdSecretToken) }.value,
                 callbackCircuitBreakerRegistry = callbackCircuitBreakerRegistry,
-                failedReason = I18Variable(code = WebhookI18nConstants.THIRD_FILTER_NOT_MATCH).toJsonStr()
+                failedReason = I18Variable(code = WebhookI18nConstants.THIRD_FILTER_NOT_MATCH).toJsonStr(),
+                eventType = getEventType().name
             )
             return listOf(
                 wipFilter, userFilter, targetBranchFilter,
@@ -393,7 +393,6 @@ class TGitMrTriggerHandler(
             startParams.putIfEmpty(PIPELINE_GIT_MR_DESC, event.object_attributes.description!!)
         }
         startParams.putIfEmpty(PIPELINE_GIT_MR_PROPOSER, event.user.username)
-
         return startParams
     }
 

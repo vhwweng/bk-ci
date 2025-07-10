@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -101,7 +101,7 @@ class BuildLessTaskService(
                 // 校验当前容器状态是否正常
                 val buildLessPoolInfo = containerPoolExecutor.getContainerStatus(containerId)
                 if (buildLessPoolInfo != null && buildLessPoolInfo.status == ContainerStatus.BUSY) {
-                    deferredResult.setResult(buildLessPoolInfo.buildLessTask)
+                    buildLessPoolInfo.buildLessTask?.let { deferredResult.setResult(it) }
                     return
                 }
 
@@ -123,8 +123,6 @@ class BuildLessTaskService(
                 loopCount++
                 Thread.sleep(200)
             }
-
-            deferredResult.setResult(null)
         }
     }
 

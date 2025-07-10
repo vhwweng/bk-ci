@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -72,11 +72,11 @@ import com.tencent.devops.process.api.service.ServiceVarResource
 import com.tencent.devops.process.engine.common.VMUtils
 import com.tencent.devops.process.pojo.mq.PipelineAgentShutdownEvent
 import com.tencent.devops.process.pojo.mq.PipelineAgentStartupEvent
-import java.time.LocalDateTime
-import javax.ws.rs.core.Response
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
+import jakarta.ws.rs.core.Response
 
 @Service
 @Suppress("UNUSED", "ComplexMethod", "LongMethod", "NestedBlockDepth", "MagicNumber")
@@ -985,7 +985,7 @@ class ThirdPartyDispatchService @Autowired constructor(
 
     fun finishBuild(event: PipelineAgentShutdownEvent) {
         tpaQueueService.finishQueue(event.buildId, event.vmSeqId)
-        thirdPartyAgentBuildService.finishBuild(event.buildId, event.vmSeqId, event.buildResult)
+        thirdPartyAgentBuildService.finishBuild(event.buildId, event.vmSeqId, event.buildResult, event.executeCount)
     }
 
     companion object {

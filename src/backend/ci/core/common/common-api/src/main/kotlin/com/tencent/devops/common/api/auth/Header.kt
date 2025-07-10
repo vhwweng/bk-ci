@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -121,3 +121,4 @@ const val AUTH_HEADER_DEVOPS_STORE_CODE: String = "X-DEVOPS-STORE-CODE"
 const val AUTH_HEADER_DEVOPS_STORE_TYPE: String = "X-DEVOPS-STORE-TYPE"
 const val AUTH_HEADER_DEVOPS_STORE_VERSION: String = "X-DEVOPS-STORE-VERSION"
 const val AUTH_HEADER_DEVOPS_SIGN_FILE_NAME: String = "X-DEVOPS-SIGN-FILE-NAME"
+const val AUTH_HEADER_DEVOPS_ENV: String = "X-DEVOPS-ENV"

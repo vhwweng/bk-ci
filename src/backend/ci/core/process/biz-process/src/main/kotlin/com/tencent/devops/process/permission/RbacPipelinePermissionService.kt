@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -186,43 +186,19 @@ class RbacPipelinePermissionService(
         }
     }
 
-    override fun getResourceByPermission(userId: String, projectId: String, permission: AuthPermission): List<String> {
-        logger.info("[rbac] get resource by permission|$userId|$projectId|$permission")
-        val startEpoch = System.currentTimeMillis()
-        try {
-            // 获取有权限的流水线、流水线组、项目列表
-            val instanceMap = authPermissionApi.getUserResourceAndParentByPermission(
-                user = userId,
-                serviceCode = pipelineAuthServiceCode,
-                projectCode = projectId,
-                permission = permission,
-                resourceType = resourceType
-            )
-            return when {
-                // 如果有项目下所有该资源权限,返回项目下流水线列表
-                instanceMap[AuthResourceType.PROJECT.value]?.contains(projectId) == true ->
-                    getAllAuthPipelineIds(projectId = projectId)
-
-                else -> {
-                    // 获取有权限流水线组下的流水线
-                    val authViewPipelineIds = instanceMap[AuthResourceType.PIPELINE_GROUP.value]?.let { authViewIds ->
-                        pipelineViewGroupCommonService.listPipelineIdsByViewIds(projectId, authViewIds)
-                    } ?: emptyList()
-                    // 获取有权限的流水线列表
-                    val authPipelineIds = instanceMap[AuthResourceType.PIPELINE_DEFAULT.value] ?: emptyList()
-
-                    val pipelineIds = mutableSetOf<String>()
-                    pipelineIds.addAll(authViewPipelineIds)
-                    pipelineIds.addAll(authPipelineIds)
-                    pipelineIds.toList()
-                }
-            }
-        } finally {
-            logger.info(
-                "It take(${System.currentTimeMillis() - startEpoch})ms to get resource by permission|" +
-                    "$userId|$projectId|$permission"
-            )
-        }
+    override fun getResourceByPermission(
+        userId: String,
+        projectId: String,
+        permission: AuthPermission
+    ): List<String> {
+        return authPermissionApi.getUserResourceByPermission(
+            user = userId,
+            serviceCode = pipelineAuthServiceCode,
+            resourceType = resourceType,
+            projectCode = projectId,
+            permission = permission,
+            supplier = null
+        )
     }
 
     override fun filterPipelines(

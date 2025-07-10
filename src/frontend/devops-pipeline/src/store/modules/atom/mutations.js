@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making BK-CI 蓝鲸持续集成平台 available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company.  All rights reserved.
+ * Copyright (C) 2019 Tencent.  All rights reserved.
  *
  * BK-CI 蓝鲸持续集成平台 is licensed under the MIT license.
  *
@@ -323,11 +323,10 @@ export default {
 
     [UPDATE_ATOM_INPUT]: (state, { atom, newParam }) => {
         try {
-            for (const key in newParam) {
-                if (Object.prototype.hasOwnProperty.call(newParam, key)) {
-                    Vue.set(atom.data.input, key, newParam[key])
-                }
-            }
+            Vue.set(atom.data, 'input', {
+                ...atom.data.input,
+                ...newParam
+            })
         } catch (e) {
             console.warn(e, 'update atom input error', atom)
         }
