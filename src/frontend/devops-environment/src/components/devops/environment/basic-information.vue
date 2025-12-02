@@ -11,7 +11,7 @@
             </div>
             <div class="item-content">
                 <div class="item-label">{{ $t('environment.nodeInfo.agentVersion') }}</div>
-                <div class="item-value">{{ nodeDetails.agentVersion || '--' }}</div>
+                <div class="item-value">{{ nodeDetails.agentVersion || '--111' }}</div>
             </div>
             <div class="item-content">
                 <div class="item-label">{{ $t('environment.nodeInfo.workerVersion') }}</div>
@@ -134,6 +134,7 @@
                     class="item-value"
                     :title="agentLink"
                 >
+                    {{ agentLink }}
                     {{ agentLink }}
                 </div>
                 <div class="handle-btn">
