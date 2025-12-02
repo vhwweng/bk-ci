@@ -135,7 +135,6 @@
                     :title="agentLink"
                 >
                     {{ agentLink }}
-                    {{ agentLink }}
                 </div>
                 <div class="handle-btn">
                     <span
