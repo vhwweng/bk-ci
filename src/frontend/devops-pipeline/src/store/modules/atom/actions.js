@@ -90,8 +90,12 @@ import {
     UPDATE_STORESTATUS,
     UPDATE_TEMPLATE_CONSTRAINT,
     UPDATE_WHOLE_ATOM_INPUT,
-    UPDATE_PIPELINE_PUBLIC_VAR_GROUPS
+    UPDATE_PIPELINE_PUBLIC_VAR_GROUPS,
+    SAVE_PIPELINE_SNAPSHOT,
+    CLEAR_PIPELINE_SNAPSHOT,
+    SET_EXEC_INFO
 } from './constants'
+import { buildPipelineSnapshot } from '@/utils/pipelineSnapshotUtil'
 
 function rootCommit (commit, ACTION_CONST, payload) {
     commit(ACTION_CONST, payload, { root: true })
@@ -141,6 +145,10 @@ export function dealPipelineRes ({ getters, dispatch, commit, state }, {
         }
         commit(SET_PIPELINE_YAML_HIGHLIGHT_MAP, highlightMap)
     }
+
+    setTimeout(() => {
+        dispatch('savePipelineSnapshot')
+    }, 500) // 延迟500ms确保所有组件初始化和副作用完成
 }
 
 export default {
@@ -269,12 +277,15 @@ export default {
             rootCommit(commit, FETCH_ERROR, e)
         }
     },
-    fetchPipelineByVersion ({ commit }, { projectId, pipelineId, version, archiveFlag, source = 'VIEW' }) {
+    fetchPipelineByVersion ({ commit }, { projectId, pipelineId, version, archiveFlag, source = 'VIEW', draftVersion  }) {
         const query = {
             source
         }
         if (archiveFlag !== undefined && archiveFlag !== null) {
             query.archiveFlag = encodeURIComponent(archiveFlag)
+        }
+        if (draftVersion !== undefined && draftVersion !== null) {
+            query.draftVersion = encodeURIComponent(draftVersion)
         }
         const url = `${PROCESS_API_URL_PREFIX}/user/version/projects/${projectId}/pipelines/${pipelineId}/versions/${version ?? ''}`
         return request.get(url, {
@@ -283,8 +294,14 @@ export default {
             return res.data
         })
     },
-    fetchTemplateByVersion ({ commit }, { projectId, templateId, version }) {
-        return request.get(`${PROCESS_API_URL_PREFIX}/user/pipeline/template/v2/${projectId}/${templateId}/${version}/details/`).then(res => {
+    fetchTemplateByVersion ({ commit }, { projectId, templateId, version, draftVersion }) {
+        const query = {}
+        if (draftVersion !== undefined && draftVersion !== null) {
+            query.draftVersion = encodeURIComponent(draftVersion)
+        }
+        return request.get(`${PROCESS_API_URL_PREFIX}/user/pipeline/template/v2/${projectId}/${templateId}/${version}/details/`, {
+            params: query
+        }).then(res => {
             return res.data
         })
     },
@@ -468,6 +485,16 @@ export default {
     setPipelineSetting: actionCreator(PIPELINE_SETTING_MUTATION),
     setEditFrom: actionCreator(SET_EDIT_FROM),
     setPipelineEditing: actionCreator(SET_PIPELINE_EDITING),
+    // 保存流水线快照
+    savePipelineSnapshot ({ commit, state, rootState }) {
+        const currentMode = rootState.pipelineMode
+        const snapshot = buildPipelineSnapshot(state, currentMode)
+        commit(SAVE_PIPELINE_SNAPSHOT, { snapshot })
+    },
+    // 清除流水线快照
+    clearPipelineSnapshot ({ commit }) {
+        commit(CLEAR_PIPELINE_SNAPSHOT)
+    },
     fetchContainers: async ({ commit }, { projectCode }) => {
         try {
             const { data: containers } = await request.get(`${STORE_API_URL_PREFIX}/user/pipeline/container/${projectCode}`)
@@ -639,7 +666,7 @@ export default {
     /**
      * 搜索模式专用：支持 installed 参数，分页加载已安装/未安装插件列表
      */
-    fetchSearchAtoms: async ({ commit, getters }, {
+    fetchSearchAtoms: async ({ commit, state, getters }, {
         projectCode,
         category,
         searchKey,
@@ -667,6 +694,13 @@ export default {
             // 为当前页记录添加 disabled 属性
             const curOs = os
             const processedRecords = getters.getAtomDisabled(res.data.records || [], curOs, category)
+            // 将搜索结果合并进 atomMap，保证选中搜索到的插件时能取到 defaultVersion 等信息
+            const [curAtomCodeList, curAtomMap] = getMapByKey(processedRecords, 'atomCode')
+            commit(SET_ATOMS, {
+                atomCodeList: [...new Set([...state.atomCodeList, ...curAtomCodeList])],
+                atomMap: Object.assign({}, state.atomMap, curAtomMap),
+                atomList: state.atomList
+            })
             return {
                 ...res.data,
                 records: processedRecords
@@ -1131,6 +1165,9 @@ export default {
             url += `?archiveFlag=${encodeURIComponent(archiveFlag)}`
         }
         return request.get(url)
+    },
+    setExecInfo ({ commit }, infoData) {
+        commit(SET_EXEC_INFO, infoData)
     },
     setAtomEditing ({ commit }, isEditing) {
         return commit(SET_ATOM_EDITING, isEditing)

@@ -573,24 +573,29 @@ class ThirdPartyAgentDao {
 
     fun getAgentByWorkspaceName(
         dslContext: DSLContext,
-        projectId: String,
+        projectId: String?,
         workspaceNames: List<String>
     ): List<TEnvironmentThirdpartyAgentRecord> {
         with(TEnvironmentThirdpartyAgent.T_ENVIRONMENT_THIRDPARTY_AGENT) {
-            return dslContext.selectFrom(this).where(CREATE_WORKSPACE_NAME.`in`(workspaceNames))
-                .and(PROJECT_ID.eq(projectId)).fetch()
+            val dsl = dslContext.selectFrom(this).where(CREATE_WORKSPACE_NAME.`in`(workspaceNames))
+            projectId?.let { dsl.and(PROJECT_ID.eq(projectId)) }
+            return dsl.fetch()
         }
     }
 
     fun fetchCreateAgent(
         dslContext: DSLContext,
-        projectId: String
+        projectId: String,
+        os: OS?
     ): List<TEnvironmentThirdpartyAgentRecord> {
         with(TEnvironmentThirdpartyAgent.T_ENVIRONMENT_THIRDPARTY_AGENT) {
-            return dslContext.selectFrom(this)
+            val dsl = dslContext.selectFrom(this)
                 .where(PROJECT_ID.eq(projectId))
                 .and(AGENT_TYPE.eq(AgentType.CREATE.name))
-                .and(STATUS.`in`(AgentStatus.IMPORT_OK.status, AgentStatus.IMPORT_EXCEPTION.status))
+            os?.let {
+                dsl.and(OS.eq(it.name))
+            }
+            return dsl.and(STATUS.`in`(AgentStatus.IMPORT_OK.status, AgentStatus.IMPORT_EXCEPTION.status))
                 .fetch()
         }
     }
