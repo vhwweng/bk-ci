@@ -310,6 +310,7 @@ export default defineComponent({
                     class={styles.inputCom}
                     modelValue={parameter.key}
                     disabled={props.disabled}
+                    filterable
                     onChange={(val: string) => handleChangeKey(val, index)}
                   >
                     {subParamsKeyList.value.map((option) => (

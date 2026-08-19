@@ -50,6 +50,7 @@
                             :disabled="disabled"
                             :value="parameter.key"
                             :placeholder="keyPlaceholder"
+                            searchable
                             @change="(val) => handleChangeKey(val, index)"
                         >
                             <bk-option
